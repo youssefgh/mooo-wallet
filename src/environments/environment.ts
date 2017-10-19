@@ -6,7 +6,8 @@
 export const environment = {
     production: false,
     testnet: true,
-    blockexplorerAddress: 'http://localhost:8081/api/',
+//    blockexplorerAddress: 'http://localhost:8081/api/',
+    blockexplorerAddress: 'http://testnet.wallet.mooo.tech:8080/api/',
     btc: 'tBTC',
     satoshi: 'tSatoshi'
 };
