@@ -1,0 +1,43 @@
+<navigation-bar header="Sign Transaction"></navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row">
+            <div class="col s12 input-field">
+                <!--<input id="rawTransaction" type="text" [(ngModel)]="rawTransaction"/>-->
+                <textarea id="rawTransaction" class="materialize-textarea" [(ngModel)]="rawTransaction"></textarea>
+                <label for="rawTransaction">Raw transaction</label>
+            </div>
+        </div>
+<!--        <div class="row">
+            <div class="col s12 input-field">
+                <input id="wif" type="text" [(ngModel)]="wif"/>
+                <label for="wif">WIF</label>
+            </div>
+        </div>-->
+        <div class="row">
+            <div class="col s12 input-field">
+                <input id="key" type="text" [(ngModel)]="key"/>
+                <label for="key">Key</label>
+            </div>
+        </div>
+<!--        <div *ngIf="isKeyEncrypted()" class="row">
+            <div class="col s12 input-field">
+                <input id="passphrase" type="password" [(ngModel)]="passphrase"/>
+                <label for="passphrase">Passphrase</label>
+            </div>
+        </div>-->
+        <div class="row">
+            <div class="col s12 center-align">
+                <a class="waves-effect waves-light btn" (click)="sign()">Sign</a>
+            </div>
+        </div>
+        <div *ngIf="signedTransactionHex" class="row">
+            <div class="col s12 input-field">
+                <!--<textarea id="signedTransactionHex" class="materialize-textarea" style="height: 150px" readonly>{{signedTransactionHex}}</textarea>-->
+                <label for="signedTransactionHex" class="active">Signed transaction</label>
+                <p style="word-wrap: break-word">{{signedTransactionHex}}</p>
+            </div>
+        </div>
+    </div>
+</main>

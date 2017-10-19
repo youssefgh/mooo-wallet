@@ -1,0 +1,41 @@
+<navigation-bar header="Create wallet"></navigation-bar>
+
+<side-navigation></side-navigation>
+
+<div class="container">
+    <div class="row">
+        <div class="input-field col s12">
+            <textarea id="transactionHex" class="materialize-textarea" [(ngModel)]="transactionHex"></textarea>
+            <label for="transactionHex">Textarea</label>
+        </div>
+        <div class="col s3" style="margin-top: 0.5rem">
+            <a class="waves-effect waves-light btn-large pulse" (click)="preview()">Preview</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="input-field col s6">
+            <h5>Inputs</h5>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Number of confirmations</th>
+                        <th>Transaction ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let utxo of transaction.ins; let i = index" [attr.data-index]="i">
+                        <td>{{utxo.amount}} {{environment.btc}}</td>
+                        <td>{{utxo.confirmations}}</td>
+                        <td>{{utxo.txid}}</td>
+                        <td>
+                            <!--<a class="waves-effect waves-circle waves-light btn-floating secondary-content" (click)="removeUTXO(i)">-->
+                                <!--<i class="material-icons">remove</i>-->
+                            <!--</a>-->
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

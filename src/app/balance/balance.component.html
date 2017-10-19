@@ -1,0 +1,67 @@
+<navigation-bar header="Balance"></navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row">
+            <div class="input-field col s9">
+                <input id="address" type="text" [(ngModel)]="address"/>            
+                <label for="address">Address</label>
+            </div>
+            <div class="col s3" style="margin-top: 0.5rem">
+                <a class="waves-effect waves-light btn-large pulse" [ngClass]="{'pulse': address == null}" (click)="load()">Load</a>
+            </div>
+        </div>
+        <div *ngIf="addressResponse != null">
+            <div class="row">
+                <div class="col s12 center-align">
+                    <h2>
+                        Balance : <span class="blue lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{addressResponse.balance}}&nbsp;{{environment.btc}}</span>
+                    </h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col s12 m6 center-align">
+                    <h4>
+                        Total received : <span class="green lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{addressResponse.totalReceived}}&nbsp;{{environment.btc}}</span>
+                    </h4>
+                </div>
+                <div class="col s12 m6 center-align">
+                    <h4>
+                        Total sent : <span class="red lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{addressResponse.totalSent}}&nbsp;{{environment.btc}}</span>
+                    </h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col s12 center-align">
+                    <h4>
+                        Unconfirmed balance : <span class="yellow lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{addressResponse.unconfirmedBalance}}&nbsp;{{environment.btc}}</span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <!--        <table>
+                        <thead>
+                            <tr>
+                                <th>Amount</th>
+                                <th>Number of confirmations</th>
+                                <th>Transaction ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let utxo of utxoArray; let i = index" [attr.data-index]="i">
+                                <td>{{utxo.amount}}&nbsp;{{environment.btc}}</td>
+                                <td>{{utxo.confirmations}}</td>
+                                <td>{{utxo.txid}}</td>
+                                <td><a class="waves-effect waves-light btn" (click)="removeUTXO(i)">Unspend</a></td>
+                                <td>
+                                    <a class="waves-effect waves-circle waves-light btn-floating secondary-content" (click)="removeUTXO(i)">
+                                        <i class="material-icons">remove</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>-->
+        </div>
+    </div>
+</main>

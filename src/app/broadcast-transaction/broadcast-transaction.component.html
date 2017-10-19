@@ -1,0 +1,18 @@
+<navigation-bar header="Broadcast Transaction"></navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row">
+            <div class="col s12 input-field">
+                <!--<input id="signedTransactionHex" type="text" [(ngModel)]="signedTransactionHex"/>-->
+                <textarea id="signedTransactionHex" class="materialize-textarea" [(ngModel)]="signedTransactionHex"></textarea>
+                <label for="signedTransactionHex">Signed transaction</label>
+            </div>
+        </div>
+        <div *ngIf="signedTransactionHex" class="row">
+            <div class="col s12 center-align">
+                <a class="waves-effect waves-light btn" (click)="broadcast()">Broadcast</a>
+            </div>
+        </div>
+    </div>
+</main>

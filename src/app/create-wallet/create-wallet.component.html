@@ -1,0 +1,55 @@
+<navigation-bar header="Create Wallet"></navigation-bar>
+
+<main>
+    <div class="container">
+        <!--<div class="row container">-->
+        <div class="row center-align">
+            <div *ngIf="!address" class="col s12">
+                <p>
+                    <input type="checkbox" id="passphraseActivation" [(ngModel)]="usePassphrase"/>
+                    <label for="passphraseActivation">Passphrase</label>
+                </p>
+            </div>
+            <div *ngIf="usePassphrase" class="col s12 input-field">
+                <input id="passphrase" type="text" [(ngModel)]="passphrase" [readonly]="address">
+                <label for="passphrase">Passphrase</label>
+            </div>
+            <!--</div>-->
+        </div>
+        <div class="row">
+            <div class="center-align">
+                <a *ngIf="(!usePassphrase || passphrase) && !address" class="waves-effect waves-light btn-large" [ngClass]="{'pulse': address == null}" (click)="generate()">Generate</a>
+            </div>
+        </div>
+        <div *ngIf="address" class="row">
+            <div class="input-field">
+                <input id="address" value="{{address}}" readonly/>
+                <label for="address" class="active">Address</label>
+            </div>
+        </div>
+        <div *ngIf="privateKey" class="row">
+            <div class="input-field">
+                <input id="privateKey" value="{{privateKey}}" readonly/>
+                <label for="privateKey" class="active">Private key</label>
+            </div>
+        </div>
+        <div *ngIf="wif" class="row">
+            <div class="input-field">
+                <input id="wif" value="{{wif}}" readonly/>
+                <label for="wif" class="active">WIF</label>
+            </div>
+        </div>
+        <div *ngIf="encryptedKey" class="row">
+            <div class="input-field">
+                <input id="encryptedKey" value="{{encryptedKey}}" readonly/>
+                <label for="encryptedKey" class="active">Encrypted key</label>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="center-align">
+                <a *ngIf="address" class="waves-effect waves-light btn-large" (click)="clean()">Clean</a>
+            </div>
+        </div>
+    </div>
+</main>
