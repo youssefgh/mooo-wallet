@@ -1,7 +1,9 @@
 import {environment} from '../../environments/environment';
+import {EnvironementService} from '../environement.service';
 import {Component, OnInit} from '@angular/core';
-import {TransactionBuilder} from 'bitcoinjs-lib';
+import {TransactionBuilder, Transaction, address} from 'bitcoinjs-lib';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {Big} from 'big.js';
 import {UTXO} from '../core/utxo';
 import {Output} from '../core/output';
 
@@ -18,11 +20,14 @@ export class CreateTransactionComponent implements OnInit {
     outputArray: Output[] = new Array<Output>();
     utxoArray: UTXO[] = new Array<UTXO>();
     transactionHex: string;
+    balanceBig: Big;
+    balance: number;
+    transactionFeeBig: Big;
+    transactionFee: number;
 
     environment = environment;
-    //    balance: number;
 
-    constructor(private httpClient: HttpClient) {}
+    constructor(private environementService: EnvironementService, private httpClient: HttpClient) {}
 
     ngOnInit() {
     }
@@ -36,59 +41,67 @@ export class CreateTransactionComponent implements OnInit {
             {headers: new HttpHeaders()})
             .subscribe(data => {
                 this.utxoArray = data;
+                this.updateBalance();
             });
     }
 
-    balance() {
-        var balance = 0;
+    calculateBalance() {
+        var balance = new Big(0);
         for (let utxo of this.utxoArray) {
-            balance += utxo.satoshis;
+            balance = balance.plus(new Big(utxo.amount));
+            balance.plus(new Big(0));
         }
         return balance;
     }
 
-    txFee() {
-        var sumAmountToBeSent = 0;
+    calculateTransactionFee() {
+        var sumAmountToBeSent = new Big(0);
         for (var i = 0; i < this.outputArray.length; i++) {
             var output = this.outputArray[i];
-            sumAmountToBeSent += output.amount;
+            sumAmountToBeSent = sumAmountToBeSent.plus(output.amount);
         }
-        return this.balance() - sumAmountToBeSent;
+        return this.balanceBig.minus(sumAmountToBeSent);
     }
 
     removeUTXO(index: number) {
-        this.utxoArray.splice(index, 1);;
+        this.utxoArray.splice(index, 1);
+        this.updateBalance();
     }
 
     addDestination() {
-        this.outputArray.push(new Output(this.selectedDestination, this.selectedAmount));
+        this.outputArray.push(new Output(this.selectedDestination, new Big(this.selectedAmount)));
         this.selectedDestination = null;
         this.selectedAmount = null;
+        this.updateTransactionFee();
     }
 
     removeDestination(index: number) {
-        this.outputArray.splice(index, 1);;
+        this.outputArray.splice(index, 1);
+        this.updateTransactionFee();
     }
 
     createTransaction() {
-        //        var utx        o = new UTXO();
-        //        utxo.txid = "acfc35bef87a4258843c859dee21c72f418c9740e6e24367e900827f1c2        2fb1a";        
-        //        this.utxoAr        ray.push(utxo);
-        //        utx        o = new UTXO();
-        //        utxo.txid = "802e5967e1703cbda5d58ddae92ad470dbddc4acb51cce98eca8bf3d7da        7e2c7";        
-        //        this.utxoArray.push(utxo);
-
-
-        var transactionBuilder = new TransactionBuilder();
+        var network = this.environementService.network;
+        var transactionBuilder = new TransactionBuilder(network);
         for (var i = 0; i < this.utxoArray.length; i++) {
             var utxo = this.utxoArray[i];
-            transactionBuilder.addInput(utxo.txid, i);
+            transactionBuilder.addInput(utxo.txid, utxo.vout);
         }
         for (var i = 0; i < this.outputArray.length; i++) {
             var output = this.outputArray[i];
-            transactionBuilder.addOutput(output.destination, output.amount);
+            transactionBuilder.addOutput(output.destination, output.amountInSatochi());
         }
         this.transactionHex = transactionBuilder.buildIncomplete().toHex();
+    }
+
+    updateBalance() {
+        this.balanceBig = this.calculateBalance();
+        this.balance = parseFloat(this.balanceBig.valueOf());
+    }
+
+    updateTransactionFee() {
+        this.transactionFeeBig = this.calculateTransactionFee();
+        this.transactionFee = parseFloat(this.transactionFeeBig.valueOf());
     }
 
     clean() {
@@ -98,6 +111,8 @@ export class CreateTransactionComponent implements OnInit {
         this.outputArray = new Array<Output>();
         this.utxoArray = new Array<UTXO>();
         this.transactionHex = null;
+        this.balanceBig = null;
+        this.balance = null;
     }
 
 }

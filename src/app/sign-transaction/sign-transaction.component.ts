@@ -34,6 +34,7 @@ export class SignTransactionComponent implements OnInit {
         var transaction = Transaction.fromHex(this.rawTransaction);
         var transactionBuilder = TransactionBuilder.fromTransaction(transaction, network);
         var inputArray = transaction.ins;
+        debugger
         for (var i = 0; i < inputArray.length; i++) {
             //            if (this.passphrase != null && this.p assphrase.length > 0) {
 

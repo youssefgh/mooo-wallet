@@ -2,6 +2,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {FormsModule} from '@angular/forms';
+import {HttpClientModule} from '@angular/common/http';
 
 import {EnvironementService} from './environement.service';
 
@@ -10,7 +11,6 @@ import {CreateWalletComponent} from './create-wallet/create-wallet.component';
 import {CreateTransactionComponent} from './create-transaction/create-transaction.component';
 import {SignTransactionComponent} from './sign-transaction/sign-transaction.component';
 import {BroadcastTransactionComponent} from './broadcast-transaction/broadcast-transaction.component';
-import {HttpClientModule} from '@angular/common/http';
 import {PreviewTransactionComponent} from './preview-transaction/preview-transaction.component';
 import {BalanceComponent} from './balance/balance.component';
 import {SideNavigationComponent} from './side-navigation/side-navigation.component';
