@@ -46,8 +46,14 @@ header, main {
     padding-left: 0px;
 }
 
-@media screen and (min-width: 992px) {
+@media screen and (min-width: 993px) {
     header, main {
         padding-left: 300px;
+    }
+}
+
+@media only screen and (min-width: 993px){
+    .container {
+        width: 80%;
     }
 }

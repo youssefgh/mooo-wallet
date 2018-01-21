@@ -2,40 +2,41 @@
 
 <main>
     <div class="container">
-        <!--<div class="row container">-->
         <div class="row center-align">
-            <div *ngIf="!address" class="col s12">
-                <p>
+<!--            <div *ngIf="!wallet" class="col s6">
+                <label>
                     <input type="checkbox" id="passphraseActivation" [(ngModel)]="usePassphrase"/>
-                    <label for="passphraseActivation">Passphrase</label>
-                </p>
-            </div>
+                    <span for="passphraseActivation">Passphrase</span>
+                </label>
+            </div>-->
+            <div *ngIf="!wallet" class="col s12">
+                <label>
+                    <input type="checkbox" id="nativeSegwitActivation" [(ngModel)]="useNativeSegwit"/>
+                    <span for="nativeSegwitActivation">Native Segwit</span>
+                </label>
+            </div> 
             <div *ngIf="usePassphrase" class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="passphrase" [readonly]="address">
+                <input id="passphrase" type="text" [(ngModel)]="passphrase" [readonly]="wallet">
                 <label for="passphrase">Passphrase</label>
             </div>
-            <!--</div>-->
         </div>
         <div class="row">
             <div class="center-align">
-                <a *ngIf="(!usePassphrase || passphrase) && !address" class="waves-effect waves-light btn-large" [ngClass]="{'pulse': address == null}" (click)="generate()">Generate</a>
+                <a *ngIf="!useNativeSegwit && (!usePassphrase || passphrase) && !wallet" class="waves-effect waves-light btn-large" 
+                    [ngClass]="{'pulse': wallet == null}" (click)="newSegwitP2wpkhInP2sh()">Generate</a>
+                <a *ngIf="useNativeSegwit && (!usePassphrase || passphrase) && !wallet" class="waves-effect waves-light btn-large" 
+                    [ngClass]="{'pulse': wallet == null}" (click)="newP2wpkh()">Generate</a>
             </div>
         </div>
-        <div *ngIf="address" class="row">
+        <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="address" value="{{address}}" readonly/>
+                <input id="address" value="{{wallet.address}}" readonly/>
                 <label for="address" class="active">Address</label>
             </div>
         </div>
-        <div *ngIf="privateKey" class="row">
+        <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="privateKey" value="{{privateKey}}" readonly/>
-                <label for="privateKey" class="active">Private key</label>
-            </div>
-        </div>
-        <div *ngIf="wif" class="row">
-            <div class="input-field">
-                <input id="wif" value="{{wif}}" readonly/>
+                <input id="wif" value="{{wallet.wif}}" readonly/>
                 <label for="wif" class="active">WIF</label>
             </div>
         </div>
@@ -45,10 +46,10 @@
                 <label for="encryptedKey" class="active">Encrypted key</label>
             </div>
         </div>
-        
+
         <div class="row">
             <div class="center-align">
-                <a *ngIf="address" class="waves-effect waves-light btn-large" (click)="clean()">Clean</a>
+                <a *ngIf="wallet" class="waves-effect waves-light btn-large" (click)="clean()">Clean</a>
             </div>
         </div>
     </div>

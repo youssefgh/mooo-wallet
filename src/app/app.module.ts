@@ -4,29 +4,26 @@ import {RouterModule} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import {HttpClientModule} from '@angular/common/http';
 
-import {EnvironementService} from './environement.service';
+import {SendService} from './send.service';
+import {WalletGenerationService} from './wallet-generation.service';
 
 import {AppComponent} from './app.component';
 import {CreateWalletComponent} from './create-wallet/create-wallet.component';
-import {CreateTransactionComponent} from './create-transaction/create-transaction.component';
-import {SignTransactionComponent} from './sign-transaction/sign-transaction.component';
-import {BroadcastTransactionComponent} from './broadcast-transaction/broadcast-transaction.component';
-import {PreviewTransactionComponent} from './preview-transaction/preview-transaction.component';
 import {BalanceComponent} from './balance/balance.component';
 import {SideNavigationComponent} from './side-navigation/side-navigation.component';
 import {NavigationBarComponent} from './navigation-bar/navigation-bar.component';
+import {SendComponent} from './send/send.component';
+import {AboutComponent} from './about/about.component';
 
 @NgModule({
     declarations: [
         AppComponent,
         CreateWalletComponent,
-        CreateTransactionComponent,
-        SignTransactionComponent,
-        BroadcastTransactionComponent,
-        PreviewTransactionComponent,
         BalanceComponent,
         SideNavigationComponent,
-        NavigationBarComponent
+        NavigationBarComponent,
+        SendComponent,
+        AboutComponent
     ],
     imports: [
         BrowserModule,
@@ -47,20 +44,16 @@ import {NavigationBarComponent} from './navigation-bar/navigation-bar.component'
                 component: BalanceComponent
             },
             {
-                path: 'CreateTransaction',
-                component: CreateTransactionComponent
+                path: 'Send',
+                component: SendComponent
             },
             {
-                path: 'SignTransaction',
-                component: SignTransactionComponent
-            },
-            {
-                path: 'BroadcastTransaction',
-                component: BroadcastTransactionComponent
+                path: 'About',
+                component: AboutComponent
             }
         ])
     ],
-    providers: [EnvironementService],
+    providers: [SendService, WalletGenerationService],
     bootstrap: [AppComponent]
 })
 export class AppModule {}

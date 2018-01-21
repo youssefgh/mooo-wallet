@@ -6,13 +6,13 @@ import {networks} from 'bitcoinjs-lib';
 
 export const environment = {
     production: true,
-    testnet: false,
-    network: networks.bitcoin,
-    electrumServer : 'node.arihanc.com',
-    electrumPort : 50001,
+    testnet: true,
+    network: networks.testnet,
+    electrumServer : 'testnetnode.arihanc.com',
+    electrumPort : 51001,
     electrumProtocol : '1.1',
-    proxyAddress : 'http://wallet.mooo.tech:8080',
-    bitcoinfeesAddress: 'http://wallet.mooo.tech:8081/api/v1/fees/list',
-    btc: 'BTC',
-    satoshi: 'Satoshi'
+    proxyAddress : 'http://testnet.wallet.mooo.tech:8080',
+    bitcoinfeesAddress: 'http://testnet.wallet.mooo.tech:8081/api/v1/fees/list',
+    btc: 'tBTC',
+    satoshi: 'tSatoshi'
 };

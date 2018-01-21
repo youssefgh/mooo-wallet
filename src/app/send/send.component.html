@@ -1,0 +1,143 @@
+<navigation-bar header="Send"></navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row">
+            <div class="input-field col s9 m8 l8 xl6 center-align">
+                <input id="address" type="text" [(ngModel)]="from" [ngClass]="{'valid': isFromValid()}" [disabled]="canSend()"/>
+                       <label for="address">Address</label>
+            </div>
+            <div *ngIf="!canSend()" class="col s3 m4 l4 xl6 center-align" style="margin-top: 0.5rem">
+                <a class="waves-effect waves-light btn-large pulse" (click)="loadUTXO()">
+                    <i class="material-icons left">system_update_alt</i>
+                    Load
+                    <span *ngIf="advancedMode"> UTXO</span>
+                </a>
+            </div>
+        </div>
+        <div *ngIf="advancedMode && canSend()" class="row">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Number of confirmations</th>
+                        <th>Transaction ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let utxo of utxoArray; let i = index" [attr.data-index]="i">
+                        <td>{{utxo.amount}}&nbsp;{{environment.btc}}</td>
+                        <td>{{utxo.confirmations}}</td>
+                        <td class="hide-on-med-and-up" style="max-width: 140px"><span class="truncate">{{utxo.tx}}</span></td>
+                        <td class="hide-on-small-and-down">{{utxo.tx}}</td>
+                        <td>
+                            <a class="waves-effect waves-light btn-floating secondary-content" (click)="removeUTXO(i)">
+                                <i class="material-icons">remove</i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div *ngIf="canSend()" class="row center-align">
+            <h1>
+                Balance : <span class="blue lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem">{{balance}}&nbsp;{{environment.btc}}</span>
+            </h1>
+        </div>
+        <div *ngIf="canSend()" class="row">
+            <div class="col s12 input-field">
+                <input *ngIf="!wifMatchAddress" id="wif" type="text" [(ngModel)]="wif" 
+                    [ngClass]="{'valid': wifMatchAddress,'invalid': wif != null && !wifMatchAddress}"
+                    [disabled]="wifMatchAddress"
+                    (keyup)="checkWifMatchAddress()"/>
+                    <input *ngIf="wifMatchAddress" id="wif" type="password" [(ngModel)]="wif" 
+                    class="valid" disabled="true"/>
+                <label for="wif">WIF</label>
+            </div>
+        </div>
+        <div *ngIf="balance > 0 && wifMatchAddress" class="row">
+            <div class="input-field col s8 l5 xl4">
+                <input id="amount-to-send" type="number" step="0.00000001" min="0.00000001" [(ngModel)]="selectedAmount"/>
+                <label for="amount-to-send">Amount to send in {{environment.btc}}</label>
+            </div>
+            <div class="input-field col s10 l6 xl7">
+                <input id="destination" type="text" [(ngModel)]="selectedDestination"/>
+                <label for="destination">Destination</label>
+            </div>
+            <div class="col s2 l1" style="margin-top: 1.4rem">
+                <a class="waves-effect waves-light btn-floating secondary-content" (click)="addDestination()">
+                    <i class="material-icons">add</i>
+                </a>
+            </div>
+        </div>
+        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Destination</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let output of outputArray; let i = index" [attr.data-index]="i">
+                        <td>{{output.amount}}&nbsp;{{environment.btc}}</td>
+                        <td>{{output.destination}}</td>
+                        <td>
+                            <a class="waves-effect waves-light btn-floating secondary-content" (click)="removeDestination(i)">
+                                <i class="material-icons">remove</i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row">
+            <!--<label for="">Fees</label>-->
+            <div class="col s1 range-field">
+                Fee :
+            </div>
+            <div class="col s3 range-field">
+                <input type="range" [min]="minSelectableFee" [max]="maxSelectableFee" [(ngModel)]="satoshiPerByte" (change)="satoshiPerByteChanged()" />
+            </div>
+            <div class="col s2">
+                <span class="new badge blue" data-badge-caption="Satoshis/Byte">{{satoshiPerByte}}</span>
+            </div>
+            <div class="col s6">
+                Estimated confirmation time : {{minimumEstimatedConfirmationTimeInMinute}}min to {{maximumEstimatedConfirmationTimeInMinute}}min
+            </div>
+        </div>
+        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row center-align">
+            <h5>Total amount to Send: {{totalAmountToSend}}&nbsp;{{environment.btc}}</h5>
+        </div>
+        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row center-align">
+            <h5>Transaction Fee: {{transactionFee}}&nbsp;{{environment.btc}}</h5>
+        </div>
+        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row center-align">
+            <h5 [ngClass]="{'red-text': isRemainingBalanceNegative()}">Balance remaining: {{remainingBalance}}&nbsp;{{environment.btc}}</h5>
+        </div>
+        <div *ngIf="outputArray.length > 0 && transactionHex != null && !isRemainingBalanceNegative()" class="row">
+            <div class="center-align">
+                <a class="waves-effect waves-light btn" (click)="send()">Send</a>
+            </div>
+        </div>
+        <div *ngIf="advancedMode && transactionHex != null" class="row">
+            <div>
+                <label for="transactionHex">Transaction</label>
+                <textarea id="transactionHex" class="materialize-textarea" readonly>{{transactionHex}}</textarea>
+            </div>
+        </div>
+        <div *ngIf="utxoArray.length > 0" class="row center-align">
+            <div class="col s12" style="margin-top: 0.5rem">
+                <a class="waves-effect waves-light btn orange" (click)="clear()">Clear</a>
+            </div>
+        </div>
+    </div>
+</main>
+<!--<div class="switch">
+    <label>
+      Off
+      <input type="checkbox" id="mycheckbox">
+      <span class="lever"></span>
+      On
+    </label>
+</div>-->

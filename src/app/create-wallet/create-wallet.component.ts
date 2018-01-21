@@ -1,8 +1,9 @@
+import {environment} from '../../environments/environment';
 import {Component, OnInit} from '@angular/core';
-import {EnvironementService} from '../environement.service';
-import {ECPair} from 'bitcoinjs-lib';
-import * as Wif from 'wif';
-import * as bip38 from 'bip38';
+import {WalletGenerationService} from '../wallet-generation.service';
+import {Wallet} from '../core/wallet';
+
+declare var M: any;
 
 @Component({
     selector: 'app-create-wallet',
@@ -11,40 +12,44 @@ import * as bip38 from 'bip38';
 })
 export class CreateWalletComponent implements OnInit {
 
-    keyPair: ECPair;
-    //    address: Buffer;
-    address: string;
-    privateKey: string;
+    environment = environment;
+
+    wallet: Wallet;
     passphrase: string;
     encryptedKey: string;
-    wif: string;
 
     usePassphrase: boolean;
+    useNativeSegwit: boolean;
 
-    constructor(private environementService: EnvironementService) {}
+    constructor(private walletGenerationService: WalletGenerationService) {}
 
     ngOnInit() {
+        //TODO enable after MaterializeCSS bug fix
+        //        let elem = document.querySelector('.tooltipped');
+        //        new M.Tooltip(elem, {});
+        //let instance = M.Tooltip.init(elem, {});
     }
 
-    generate() {
-        this.keyPair = ECPair.makeRandom({network: this.environementService.network});
-        this.address = this.keyPair.getAddress();
-        this.wif = this.keyPair.toWIF();
-        var decodedKeyPair = Wif.decode(this.keyPair.toWIF());
-        this.privateKey = decodedKeyPair.privateKey.toString('hex');
+    newSegwitP2wpkhInP2sh() {
+        this.wallet = this.walletGenerationService.newP2wpkhInP2sh();
         if (this.usePassphrase) {
-            this.encryptedKey = bip38.encrypt(decodedKeyPair.privateKey, decodedKeyPair.compressed, this.passphrase);
+            this.encryptedKey = this.walletGenerationService.encrypt(this.wallet.wif, this.passphrase);
         }
-        console.log(Wif.encode(239, decodedKeyPair.privateKey, true));
-        console.log(Wif.encode(239, new Buffer(this.privateKey,'hex'), true));
+    }
+
+    newP2wpkh() {
+        this.wallet = this.walletGenerationService.newP2wpkh();
+        if (this.usePassphrase) {
+            this.encryptedKey = this.walletGenerationService.encrypt(this.wallet.wif, this.passphrase);
+        }
     }
 
     clean() {
-        this.address = null;
-        this.privateKey = null;
+        this.wallet = null;
         this.passphrase = null;
         this.encryptedKey = null;
-        this.wif = null;
+        this.usePassphrase = null;
+        this.useNativeSegwit = null;
     }
 
 }
