@@ -1,7 +1,7 @@
 import {environment} from '../environments/environment';
 import {Injectable} from '@angular/core';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import * as bip38 from 'bip38';
+import * as bip39 from 'bip39';
 
 import {Wallet} from './core/wallet';
 
@@ -12,10 +12,6 @@ export class WalletGenerationService {
 
     constructor() {}
 
-    newECPair() {
-        return bitcoinjs.ECPair.makeRandom({network: this.environment.network});
-    }
-
     generateP2pkh(ecPair: bitcoinjs.ECPair) {
         let wallet = new Wallet();
         wallet.address = ecPair.getAddress();
@@ -23,8 +19,12 @@ export class WalletGenerationService {
         return wallet;
     }
 
-    newP2wpkhInP2sh() {
-        return this.generateP2wpkhInP2sh(this.newECPair());
+    newP2wpkhInP2sh(password: string) {
+        let mnemonic = bip39.generateMnemonic();
+        let ecPair = this.ecPairFromMnemonic(mnemonic,password);
+        let wallet = this.generateP2wpkhInP2sh(ecPair);
+        wallet.mnemonic = mnemonic;
+        return wallet;
     }
 
     generateP2wpkhInP2sh(ecPair: bitcoinjs.ECPair) {
@@ -37,8 +37,12 @@ export class WalletGenerationService {
         return wallet;
     }
 
-    newP2wpkh() {
-        return this.generateP2wpkh(this.newECPair());
+    newP2wpkh(password: string) {
+        let mnemonic = bip39.generateMnemonic();
+        let ecPair = this.ecPairFromMnemonic(mnemonic,password);
+        let wallet = this.generateP2wpkh(ecPair);
+        wallet.mnemonic = mnemonic;
+        return wallet;
     }
 
     generateP2wpkh(ecPair: bitcoinjs.ECPair) {
@@ -48,10 +52,6 @@ export class WalletGenerationService {
         wallet.address = bitcoinjs.address.fromOutputScript(scriptPubKey, this.environment.network);
         wallet.wif = ecPair.toWIF();
         return wallet;
-    }
-
-    encrypt(privateKey: string, passphrase: string) {
-        return bip38.encrypt(privateKey, true, passphrase);
     }
 
     isP2pkhAddress(addressToCheck: string, ecPair: bitcoinjs.ECPair) {
@@ -72,15 +72,25 @@ export class WalletGenerationService {
         return witnessScript;
     }
 
-    isWifMatchAddress(wif: string, address: string) {
+    isMnemonicMatchAddress(mnemonic: string, password: string, address: string) {
         try {
-            let ecPair = bitcoinjs.ECPair.fromWIF(wif, this.environment.network);
+            let ecPair = this.ecPairFromMnemonic(mnemonic, password)
             return this.isP2pkhAddress(address, ecPair) ||
                 this.isP2wpkhInP2shAddress(address, ecPair) ||
                 this.isP2wpkhAddress(address, ecPair);
         } catch (e) {
             return false;
         }
+    }
+
+//    isWifMatchAddress(mnemonic: string, address: string) {
+//        return false;
+//    }
+
+    ecPairFromMnemonic(mnemonic: string, password: string) {
+        let seed = bip39.mnemonicToSeed(mnemonic, password);
+        let hdNode = bitcoinjs.HDNode.fromSeedBuffer(seed, this.environment.network);
+        return hdNode.keyPair;
     }
 
 }

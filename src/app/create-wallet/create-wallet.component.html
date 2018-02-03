@@ -3,21 +3,15 @@
 <main>
     <div class="container">
         <div class="row center-align">
-<!--            <div *ngIf="!wallet" class="col s6">
-                <label>
-                    <input type="checkbox" id="passphraseActivation" [(ngModel)]="usePassphrase"/>
-                    <span for="passphraseActivation">Passphrase</span>
-                </label>
-            </div>-->
             <div *ngIf="!wallet" class="col s12">
                 <label>
                     <input type="checkbox" id="nativeSegwitActivation" [(ngModel)]="useNativeSegwit"/>
                     <span for="nativeSegwitActivation">Native Segwit</span>
                 </label>
-            </div> 
-            <div *ngIf="usePassphrase" class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="passphrase" [readonly]="wallet">
-                <label for="passphrase">Passphrase</label>
+            </div>
+            <div *ngIf="!wallet" class="col s12 input-field">
+                <input id="password" type="text" [(ngModel)]="password">
+                <label for="password">Password (optional)</label>
             </div>
         </div>
         <div class="row">
@@ -36,17 +30,16 @@
         </div>
         <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="wif" value="{{wallet.wif}}" readonly/>
-                <label for="wif" class="active">WIF</label>
+                <input id="mnemonic" value="{{wallet.mnemonic}}" readonly/>
+                <label for="mnemonic" class="active">Mnemonic</label>
             </div>
         </div>
-        <div *ngIf="encryptedKey" class="row">
+        <div *ngIf="wallet && password" class="row">
             <div class="input-field">
-                <input id="encryptedKey" value="{{encryptedKey}}" readonly/>
-                <label for="encryptedKey" class="active">Encrypted key</label>
+                <input id="password" value="{{password}}" readonly/>
+                <label for="password" class="active">Password</label>
             </div>
         </div>
-
         <div class="row">
             <div class="center-align">
                 <a *ngIf="wallet" class="waves-effect waves-light btn-large" (click)="clean()">Clean</a>

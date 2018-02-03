@@ -44,18 +44,23 @@
                 Balance : <span class="blue lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem">{{balance}}&nbsp;{{environment.btc}}</span>
             </h1>
         </div>
-        <div *ngIf="canSend()" class="row">
+        <div *ngIf="canSend() && !mnemonicMatchAddress" class="row">
             <div class="col s12 input-field">
-                <input *ngIf="!wifMatchAddress" id="wif" type="text" [(ngModel)]="wif" 
-                    [ngClass]="{'valid': wifMatchAddress,'invalid': wif != null && !wifMatchAddress}"
-                    [disabled]="wifMatchAddress"
-                    (keyup)="checkWifMatchAddress()"/>
-                    <input *ngIf="wifMatchAddress" id="wif" type="password" [(ngModel)]="wif" 
-                    class="valid" disabled="true"/>
-                <label for="wif">WIF</label>
+                <input id="mnemonic" type="text" [(ngModel)]="mnemonic" 
+                       [ngClass]="{'valid': mnemonicMatchAddress,'invalid': mnemonic != null && !mnemonicMatchAddress}"
+                       [disabled]="mnemonicMatchAddress"
+                       (keyup)="checkMnemonicMatchAddress()"/>
+                       <label for="mnemonic">Mnemonic</label>
+            </div>
+            <div class="col s12 input-field">
+                <input id="password" type="text" [(ngModel)]="password" 
+                       [ngClass]="{'valid': mnemonicMatchAddress,'invalid': mnemonic != null && !mnemonicMatchAddress}"
+                       [disabled]="mnemonicMatchAddress"
+                       (keyup)="checkMnemonicMatchAddress()"/>
+                       <label for="password">Password</label>
             </div>
         </div>
-        <div *ngIf="balance > 0 && wifMatchAddress" class="row">
+        <div *ngIf="balance > 0 && mnemonicMatchAddress" class="row">
             <div class="input-field col s8 l5 xl4">
                 <input id="amount-to-send" type="number" step="0.00000001" min="0.00000001" [(ngModel)]="selectedAmount"/>
                 <label for="amount-to-send">Amount to send in {{environment.btc}}</label>
@@ -70,7 +75,7 @@
                 </a>
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row">
+        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row">
             <table>
                 <thead>
                     <tr>
@@ -91,7 +96,7 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row">
+        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row">
             <!--<label for="">Fees</label>-->
             <div class="col s1 range-field">
                 Fee :
@@ -106,13 +111,13 @@
                 Estimated confirmation time : {{minimumEstimatedConfirmationTimeInMinute}}min to {{maximumEstimatedConfirmationTimeInMinute}}min
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row center-align">
+        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row center-align">
             <h5>Total amount to Send: {{totalAmountToSend}}&nbsp;{{environment.btc}}</h5>
         </div>
-        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row center-align">
+        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row center-align">
             <h5>Transaction Fee: {{transactionFee}}&nbsp;{{environment.btc}}</h5>
         </div>
-        <div *ngIf="outputArray.length > 0 && wifMatchAddress" class="row center-align">
+        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row center-align">
             <h5 [ngClass]="{'red-text': isRemainingBalanceNegative()}">Balance remaining: {{remainingBalance}}&nbsp;{{environment.btc}}</h5>
         </div>
         <div *ngIf="outputArray.length > 0 && transactionHex != null && !isRemainingBalanceNegative()" class="row">

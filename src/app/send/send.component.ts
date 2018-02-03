@@ -38,7 +38,8 @@ export class SendComponent implements OnInit {
     totalAmountToSend: string;
     remainingBalance: string;
 
-    wif: string;
+    mnemonic: string;
+    password: string;
 
     minSelectableFee: number;
     maxSelectableFee: number;
@@ -51,7 +52,7 @@ export class SendComponent implements OnInit {
 
     environment = environment;
 
-    wifMatchAddress: boolean;
+    mnemonicMatchAddress: boolean;
 
     constructor(private sendService: SendService,
         private walletGenerationService: WalletGenerationService, private httpClient: HttpClient) {}
@@ -78,7 +79,12 @@ export class SendComponent implements OnInit {
             }
             let lastBlockHeight: number = responseList[1].result.block_height;
             this.minimumRelayFeeInBtc = responseList[2].result;
-            for (let item of responseList[3].result) {
+            let utxoList: Array<any> = responseList[3].result;
+            if (utxoList.length === 0) {
+                M.toast({html: 'This wallet is empty'});
+                return;
+            }
+            for (let item of utxoList) {
                 let utxo = new Transaction();
                 utxo.id = item.tx_hash;
                 utxo.vout = item.tx_pos;
@@ -91,6 +97,10 @@ export class SendComponent implements OnInit {
                 this.utxoArray.push(utxo);
             }
             this.utxoArray = this.utxoArray.filter((utxo: Transaction) => utxo.confirmations > 0);
+            if (this.utxoArray.length === 0) {
+                M.toast({html: 'This wallet doesn\'t have confirmed balance'});
+                return;
+            }
             this.updateBalance();
             this.changeOutput = new Output(this.from.toString(), this.balanceBig);
         }, (error: HttpErrorResponse) => {
@@ -150,7 +160,7 @@ export class SendComponent implements OnInit {
         this.selectedDestination = null;
         this.selectedAmount = null;
         this.transaction = this.sendService.createTransaction(this.outputArray, this.changeOutput, this.utxoArray,
-            this.from, this.wif);
+            this.from, this.mnemonic, this.password);
         this.transactionHex = this.transaction.toHex();
         this.updateTransactionFee();
         this.updateTotalAmountToSend();
@@ -166,7 +176,7 @@ export class SendComponent implements OnInit {
         }
         this.outputArray.splice(index, 1);
         this.transaction = this.sendService.createTransaction(this.outputArray, this.changeOutput, this.utxoArray,
-            this.from, this.wif);
+            this.from, this.mnemonic, this.password);
         this.transactionHex = this.transaction.toHex();
         this.updateTransactionFee();
         this.updateTotalAmountToSend();
@@ -180,7 +190,7 @@ export class SendComponent implements OnInit {
     }
 
     updateTransactionFee() {
-        let ecPair = bitcoinjs.ECPair.fromWIF(this.wif, this.environment.network);
+        let ecPair = this.walletGenerationService.ecPairFromMnemonic(this.mnemonic, this.password);
         let feeInSatoshi;
         if (this.walletGenerationService.isP2wpkhInP2shAddress(this.from.toString(), ecPair)) {
             let virtualSize = this.transaction.virtualSize();
@@ -231,11 +241,12 @@ export class SendComponent implements OnInit {
         this.totalAmountToSend = null;
         this.remainingBalance = null;
 
-        this.wif = null;
+        this.mnemonic = null;
+        this.password = null;
 
         this.transaction = null;
 
-        this.wifMatchAddress = null;
+        this.mnemonicMatchAddress = false;
     }
 
     //TODO rename
@@ -264,14 +275,14 @@ export class SendComponent implements OnInit {
             this.sendService.isValidAddress(this.from.toString(), this.environment.network);
     }
 
-    checkWifMatchAddress() {
-        this.wifMatchAddress = this.walletGenerationService.isWifMatchAddress(this.wif, this.from.toString());
+    checkMnemonicMatchAddress() {
+        this.mnemonicMatchAddress = this.walletGenerationService.isMnemonicMatchAddress(this.mnemonic, this.password, this.from.toString());
     }
 
     send() {
         let changeOutputMinusFees = new Output(this.changeOutput.destination, this.changeOutput.amount.minus(this.transactionFeeBig));
         this.transaction = this.sendService.createTransaction(this.outputArray, changeOutputMinusFees, this.utxoArray,
-            this.from, this.wif);
+            this.from, this.mnemonic, this.password);
         this.transactionHex = this.transaction.toHex();
         this.sendService.broadcast(this.transactionHex).subscribe(data => {
             let responseList = new Array<JsonRpcResponse>();

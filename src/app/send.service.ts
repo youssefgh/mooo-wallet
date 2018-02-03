@@ -59,7 +59,7 @@ export class SendService {
         }
     }
 
-    createTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], from: string, wif: string) {
+    createTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], from: string, mnemonic: string, password: string) {
         let transactionBuilder = new bitcoinjs.TransactionBuilder(this.environment.network);
         for (let i = 0; i < outputArray.length; i++) {
             let output = outputArray[i];
@@ -68,7 +68,7 @@ export class SendService {
         if (changeOutput !== null) {
             transactionBuilder.addOutput(changeOutput.destination, changeOutput.amountInSatochi());
         }
-        let ecPair = bitcoinjs.ECPair.fromWIF(wif, this.environment.network);
+        let ecPair = this.walletGenerationService.ecPairFromMnemonic(mnemonic, password);
         if (this.walletGenerationService.isP2wpkhAddress(from, ecPair)) {
             let pubKeyHash = bitcoinjs.crypto.hash160(ecPair.getPublicKeyBuffer())
             let scriptPubKey = bitcoinjs.script.witnessPubKeyHash.output.encode(pubKeyHash)
