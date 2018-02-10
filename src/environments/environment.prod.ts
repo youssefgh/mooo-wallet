@@ -11,8 +11,8 @@ export const environment = {
     electrumServer : 'node.arihanc.com',
     electrumPort : 50001,
     electrumProtocol : '1.1',
-    proxyAddress : 'http://wallet.mooo.tech:8080',
-    bitcoinfeesAddress: 'http://wallet.mooo.tech:8081/api/v1/fees/list',
+    proxyAddress : 'https://proxy.wallet.mooo.tech:8443',
+    bitcoinfeesAddress: 'https://fee.wallet.mooo.tech:8443/api/v1/fees/list',
     btc: 'BTC',
     satoshi: 'Satoshi'
 };

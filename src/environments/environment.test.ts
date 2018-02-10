@@ -11,8 +11,8 @@ export const environment = {
     electrumServer : 'testnetnode.arihanc.com',
     electrumPort : 51001,
     electrumProtocol : '1.1',
-    proxyAddress : 'http://testnet.wallet.mooo.tech:8080',
-    bitcoinfeesAddress: 'http://testnet.wallet.mooo.tech:8081/api/v1/fees/list',
+    proxyAddress : 'https://proxy.testnet.wallet.mooo.tech:8443',
+    bitcoinfeesAddress: 'https://fee.testnet.wallet.mooo.tech:8443/api/v1/fees/list',
     btc: 'tBTC',
     satoshi: 'tSatoshi'
 };
