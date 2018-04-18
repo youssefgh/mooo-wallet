@@ -38,7 +38,7 @@ export class BalanceComponent implements OnInit {
         procedure.params.push(environment.electrumProtocol);
         procedure.params.push(environment.electrumProtocol);
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.scripthash.get_balance");
+        procedure = new Procedure(2, "blockchain.scripthash.get_balance");
         procedure.params.push(this.sendService.scriptHashFrom(this.address));
         call.procedureList.push(procedure.toString());
         this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call).subscribe(data => {
@@ -52,6 +52,7 @@ export class BalanceComponent implements OnInit {
                 }
                 responseList.push(response);
             }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1)
             let result = responseList[1].result;
             this.confirmedBalance = this.sendService.satoshiToBitcoin(result.confirmed).valueOf();
             this.unconfirmedBalance = this.sendService.satoshiToBitcoin(result.unconfirmed).valueOf();
@@ -74,9 +75,9 @@ export class BalanceComponent implements OnInit {
         procedure.params.push(environment.electrumProtocol);
         procedure.params.push(environment.electrumProtocol);
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.headers.subscribe");
+        procedure = new Procedure(2, "blockchain.headers.subscribe");
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.scripthash.get_history");
+        procedure = new Procedure(3, "blockchain.scripthash.get_history");
         procedure.params.push(this.sendService.scriptHashFrom(this.address));
         call.procedureList.push(procedure.toString());
         this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call).subscribe(data => {
@@ -90,6 +91,7 @@ export class BalanceComponent implements OnInit {
                 }
                 responseList.push(response);
             }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1)
             let lastBlockHeight: number = responseList[1].result.block_height;
             let transactionArray = new Array<Transaction>();
             for (let item of responseList[2].result.reverse()) {
@@ -105,6 +107,7 @@ export class BalanceComponent implements OnInit {
             }
             this.rawTransactionOf(this.transactionIdListOf(transactionArray)).subscribe(data => {
                 let transactionIdList = new Array<string>();
+                data = data.sort((a, b) => a.id > b.id ? 1 : -1)
                 for (let i = 1; i < data.length; i++) {
                     let transactionFromRaw = bitcoinjs.Transaction.fromHex(JSON.parse(data[i]).result);
                     for (let j = 0; j < transactionFromRaw.outs.length; j++) {
@@ -123,6 +126,7 @@ export class BalanceComponent implements OnInit {
                     }
                 }
                 this.rawTransactionOf(transactionIdList).subscribe(data => {
+                    data = data.sort((a, b) => a.id > b.id ? 1 : -1)
                     let k = 1;
                     for (let i = 0; i < transactionArray.length; i++) {
                         let transaction = transactionArray[i];
@@ -154,8 +158,9 @@ export class BalanceComponent implements OnInit {
         procedure.params.push(environment.electrumProtocol);
         procedure.params.push(environment.electrumProtocol);
         call.procedureList.push(procedure.toString());
+        let i = 1;
         for (let id of transactionIdList) {
-            procedure = new Procedure(1, "blockchain.transaction.get");
+            procedure = new Procedure(++i, "blockchain.transaction.get");
             procedure.params.push(id);
             call.procedureList.push(procedure.toString());
         }

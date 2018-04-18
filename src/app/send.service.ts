@@ -65,7 +65,7 @@ export class SendService {
             let output = outputArray[i];
             transactionBuilder.addOutput(output.destination, output.amountInSatochi());
         }
-        if (changeOutput !== null) {
+        if (changeOutput !== null && !changeOutput.amount.eq(0)) {
             transactionBuilder.addOutput(changeOutput.destination, changeOutput.amountInSatochi());
         }
         let ecPair = this.walletGenerationService.ecPairFromMnemonic(mnemonic, password);
@@ -110,19 +110,19 @@ export class SendService {
         procedure.params.push(environment.electrumProtocol);
         procedure.params.push(environment.electrumProtocol);
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.headers.subscribe");
+        procedure = new Procedure(2, "blockchain.headers.subscribe");
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.relayfee");
+        procedure = new Procedure(3, "blockchain.relayfee");
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.scripthash.listunspent");
+        procedure = new Procedure(4, "blockchain.scripthash.listunspent");
         procedure.params.push(this.scriptHashFrom(address));
         call.procedureList.push(procedure.toString());
         return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call);
     }
 
     scriptHashFrom(addressString: string) {
-        let scriptHash = bitcoinjs.address.toOutputScript(addressString, this.environment.network);
-        let reversedScriptHash = new Buffer(bitcoinjs.crypto.sha256(scriptHash).reverse());
+        let outputScript = bitcoinjs.address.toOutputScript(addressString, this.environment.network);
+        let reversedScriptHash = new Buffer(bitcoinjs.crypto.sha256(outputScript).reverse());
         return reversedScriptHash.toString("hex");
     }
 
@@ -132,7 +132,7 @@ export class SendService {
         procedure.params.push(environment.electrumProtocol);
         procedure.params.push(environment.electrumProtocol);
         call.procedureList.push(procedure.toString());
-        procedure = new Procedure(1, "blockchain.transaction.broadcast");
+        procedure = new Procedure(2, "blockchain.transaction.broadcast");
         procedure.params.push(transaction);
         call.procedureList.push(procedure.toString());
         return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call);

@@ -77,6 +77,7 @@ export class SendComponent implements OnInit {
                 }
                 responseList.push(response);
             }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1)
             let lastBlockHeight: number = responseList[1].result.block_height;
             this.minimumRelayFeeInBtc = responseList[2].result;
             let utxoList: Array<any> = responseList[3].result;
@@ -192,7 +193,9 @@ export class SendComponent implements OnInit {
     updateTransactionFee() {
         let ecPair = this.walletGenerationService.ecPairFromMnemonic(this.mnemonic, this.password);
         let feeInSatoshi;
-        if (this.walletGenerationService.isP2wpkhInP2shAddress(this.from.toString(), ecPair)) {
+        //todo check native segwit
+        if (this.walletGenerationService.isP2wpkhAddress(this.from.toString(), ecPair) ||
+            this.walletGenerationService.isP2wpkhInP2shAddress(this.from.toString(), ecPair)) {
             let virtualSize = this.transaction.virtualSize();
             feeInSatoshi = virtualSize * this.satoshiPerByte;
         } else {
@@ -267,7 +270,7 @@ export class SendComponent implements OnInit {
     }
 
     isRemainingBalanceNegative() {
-        return parseFloat(this.remainingBalance) <= 0;
+        return parseFloat(this.remainingBalance) < 0;
     }
 
     isFromValid() {
@@ -295,6 +298,7 @@ export class SendComponent implements OnInit {
                 }
                 responseList.push(response);
             }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1)
             let response = responseList[1];
             M.toast({html: 'Sending complete ! Tx:' + response.result});
             this.clear();
