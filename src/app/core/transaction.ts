@@ -1,3 +1,4 @@
+import * as bitcoinjs from 'bitcoinjs-lib';
 
 export class Transaction {
 
@@ -8,6 +9,6 @@ export class Transaction {
     height: number;
     confirmations: number;
     
-    inList = new Array();
+    inList = new Array<bitcoinjs.In>();
 
 }

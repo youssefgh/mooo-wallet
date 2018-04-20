@@ -108,21 +108,22 @@ export class BalanceComponent implements OnInit {
             this.rawTransactionOf(this.transactionIdListOf(transactionArray)).subscribe(data => {
                 let transactionIdList = new Array<string>();
                 data = data.sort((a, b) => a.id > b.id ? 1 : -1)
-                for (let i = 1; i < data.length; i++) {
-                    let transactionFromRaw = bitcoinjs.Transaction.fromHex(JSON.parse(data[i]).result);
+                for (let i = 0; i < transactionArray.length; i++) {
+                    let transactionFromRaw = bitcoinjs.Transaction.fromHex(JSON.parse(data[i + 1]).result);
                     for (let j = 0; j < transactionFromRaw.outs.length; j++) {
                         let out = transactionFromRaw.outs[j];
                         try {
                             if (bitcoinjs.address.fromOutputScript(out.script, this.environment.network) === this.address) {
-                                transactionArray[i - 1].satoshis -= out.value;
+                                transactionArray[i].satoshis += out.value;
                             }
                         } catch (exception) {
+                            console.info('Unsupported output script :' + out.script)
                         }
                     }
                     for (let j = 0; j < transactionFromRaw.ins.length; j++) {
                         let inp = transactionFromRaw.ins[j];
                         transactionIdList.push(new Buffer(inp.hash.reverse()).toString('hex'));
-                        transactionArray[i - 1].inList.push(inp);
+                        transactionArray[i].inList.push(inp);
                     }
                 }
                 this.rawTransactionOf(transactionIdList).subscribe(data => {
@@ -133,12 +134,17 @@ export class BalanceComponent implements OnInit {
                         for (let j = 0; j < transaction.inList.length; j++ , k++) {
                             let inp = transaction.inList[j];
                             let inputTransaction = bitcoinjs.Transaction.fromHex(JSON.parse(data[k]).result);
-                            let out = inputTransaction.outs[inp.index];
-                            if (bitcoinjs.address.fromOutputScript(out.script, this.environment.network) === this.address) {
-                                transaction.satoshis += out.value;
+                            for (let l = 0; l < inputTransaction.outs.length; l++) {
+                                let out = inputTransaction.outs[l]
+                                try {
+                                    if (bitcoinjs.address.fromOutputScript(out.script, this.environment.network) === this.address) {
+                                        transaction.satoshis -= out.value;
+                                    }
+                                } catch (exception) {
+                                    console.info('Unsupported output script :' + out.script)
+                                }
                             }
                         }
-                        transaction.satoshis = -transaction.satoshis;
                     }
                     for (let transaction of transactionArray) {
                         transaction.amount = parseFloat(this.sendService.satoshiToBitcoin(transaction.satoshis).valueOf());
