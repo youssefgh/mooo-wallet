@@ -8,7 +8,7 @@ export const environment = {
     production: true,
     testnet: false,
     network: networks.bitcoin,
-    electrumServer : 'vps.hsmiths.com',
+    electrumServer : 'vps3.hsmiths.com',
     electrumPort : 50001,
     electrumProtocol : '1.2',
     proxyAddress : 'https://proxy.wallet.mooo.tech:8443',
