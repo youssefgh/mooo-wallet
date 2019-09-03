@@ -4,8 +4,8 @@
     <div class="container">
         <div class="row">
             <div class="input-field col s9 m8 l8 xl6 center-align">
-                <input id="address" type="text" [(ngModel)]="from" [ngClass]="{'valid': isFromValid()}" [disabled]="canSend()"/>
-                       <label for="address">Address</label>
+                <input id="source" type="text" [(ngModel)]="from" [ngClass]="{'valid': isFromValid()}" [disabled]="canSend()"/>
+                       <label for="source">Address</label>
             </div>
             <div *ngIf="!canSend()" class="col s3 m4 l4 xl6 center-align" style="margin-top: 0.5rem">
                 <a class="waves-effect waves-light btn-large pulse" (click)="loadUTXO()">
@@ -22,14 +22,16 @@
                         <th>Amount</th>
                         <th>Number of confirmations</th>
                         <th>Transaction ID</th>
+                        <th>Address</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let utxo of utxoArray; let i = index" [attr.data-index]="i">
-                        <td>{{utxo.amount}}&nbsp;{{environment.btc}}</td>
-                        <td>{{utxo.confirmations}}</td>
-                        <td class="hide-on-med-and-up" style="max-width: 140px"><span class="truncate">{{utxo.tx}}</span></td>
-                        <td class="hide-on-small-and-down">{{utxo.tx}}</td>
+                    <tr *ngFor="let transaction of utxoArray; let i = index" [attr.data-index]="i">
+                        <td>{{transaction.amount}}&nbsp;{{environment.btc}}</td>
+                        <td class="center">{{transaction.confirmations}}</td>
+                        <td class="hide-on-med-and-up" style="max-width: 140px"><span class="truncate">{{transaction.id}}</span></td>
+                        <td class="hide-on-small-and-down">{{transaction.id}}</td>
+                        <td>{{transaction.derived.address}}</td>
                         <td>
                             <a class="waves-effect waves-light btn-floating secondary-content" (click)="removeUTXO(i)">
                                 <i class="material-icons">remove</i>
@@ -44,23 +46,30 @@
                 Balance : <span class="blue lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem">{{balance}}&nbsp;{{environment.btc}}</span>
             </h1>
         </div>
-        <div *ngIf="canSend() && !mnemonicMatchAddress" class="row">
-            <div class="col s12 input-field">
+        <div *ngIf="canSend() && !keyMatchAddress" class="row">
+            <!-- <div *ngIf="!useWif" class="col s12 input-field center-align">
+                <a class="waves-effect waves-light btn" (click)="switchToWif()">Use WIF</a>
+            </div> -->
+            <div *ngIf="!useWif" class="col s12 input-field">
                 <input id="mnemonic" type="text" [(ngModel)]="mnemonic" 
-                       [ngClass]="{'valid': mnemonicMatchAddress,'invalid': mnemonic != null && !mnemonicMatchAddress}"
-                       [disabled]="mnemonicMatchAddress"
-                       (keyup)="checkMnemonicMatchAddress()"/>
+                       [ngClass]="{'valid': keyMatchAddress,'invalid': mnemonic != null && !keyMatchAddress}"
+                       (keyup)="checkKeyMatchAddress()"/>
                        <label for="mnemonic">Mnemonic</label>
             </div>
+            <div *ngIf="useWif" class="col s12 input-field">
+                <input id="wif" type="text" [(ngModel)]="wif" 
+                       [ngClass]="{'valid': keyMatchAddress,'invalid': wif != null && !keyMatchAddress}"
+                       (keyup)="checkKeyMatchAddress()"/>
+                       <label for="wif">Wif</label>
+            </div>
             <div class="col s12 input-field">
-                <input id="password" type="text" [(ngModel)]="password" 
-                       [ngClass]="{'valid': mnemonicMatchAddress,'invalid': mnemonic != null && !mnemonicMatchAddress}"
-                       [disabled]="mnemonicMatchAddress"
-                       (keyup)="checkMnemonicMatchAddress()"/>
-                       <label for="password">Password</label>
+                <input id="passphrase" type="text" [(ngModel)]="passphrase" 
+                       [ngClass]="{'valid': keyMatchAddress,'invalid': mnemonic != null && !keyMatchAddress}"
+                       (keyup)="checkKeyMatchAddress()"/>
+                       <label for="passphrase">Passphrase</label>
             </div>
         </div>
-        <div *ngIf="balance > 0 && mnemonicMatchAddress" class="row">
+        <div *ngIf="balanceBig?.gt(0) && keyMatchAddress" class="row">
             <div class="input-field col s8 l5 xl4">
                 <input id="amount-to-send" type="number" step="0.00000001" min="0.00000001" [(ngModel)]="selectedAmount"/>
                 <label for="amount-to-send">Amount to send in {{environment.btc}}</label>
@@ -75,7 +84,7 @@
                 </a>
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row">
+        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row">
             <table>
                 <thead>
                     <tr>
@@ -96,7 +105,7 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row">
+        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row">
             <!--<label for="">Fees</label>-->
             <div class="col s1 range-field">
                 Fee :
@@ -111,13 +120,13 @@
                 Estimated confirmation time : {{minimumEstimatedConfirmationTimeInMinute}}min to {{maximumEstimatedConfirmationTimeInMinute}}min
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row center-align">
+        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row center-align">
             <h5>Total amount to Send: {{totalAmountToSend}}&nbsp;{{environment.btc}}</h5>
         </div>
-        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row center-align">
+        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row center-align">
             <h5>Transaction Fee: {{transactionFee}}&nbsp;{{environment.btc}}</h5>
         </div>
-        <div *ngIf="outputArray.length > 0 && mnemonicMatchAddress" class="row center-align">
+        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row center-align">
             <h5 [ngClass]="{'red-text': isRemainingBalanceNegative()}">Balance remaining: {{remainingBalance}}&nbsp;{{environment.btc}}</h5>
         </div>
         <div *ngIf="outputArray.length > 0 && transactionHex != null && !isRemainingBalanceNegative()" class="row">

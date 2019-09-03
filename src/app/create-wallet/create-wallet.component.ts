@@ -12,38 +12,38 @@ declare var M: any;
 })
 export class CreateWalletComponent implements OnInit {
 
-    environment = environment;
+    environment = environment
 
-    wallet: Wallet;
-    password: string;
-    encryptedKey: string;
+    wallet: Wallet
+    passphrase: string
+    encryptedKey: string
 
-    usePassphrase: boolean;
-    useNativeSegwit: boolean;
+    usePassphrase: boolean
+    useNativeSegwit: boolean
 
     constructor(private walletGenerationService: WalletGenerationService) {}
 
     ngOnInit() {
         //TODO enable after MaterializeCSS bug fix
-        //        let elem = document.querySelector('.tooltipped');
-        //        new M.Tooltip(elem, {});
-        //let instance = M.Tooltip.init(elem, {});
+        //        let elem = document.querySelector('.tooltipped')
+        //        new M.Tooltip(elem, {})
+        //let instance = M.Tooltip.init(elem, {})
     }
 
     newSegwitP2wpkhInP2sh() {
-        this.wallet = this.walletGenerationService.newP2wpkhInP2sh(this.password);
+        this.wallet = this.walletGenerationService.newP2wpkhInP2sh(this.passphrase, this.environment.network)
     }
 
     newP2wpkh() {
-        this.wallet = this.walletGenerationService.newP2wpkh(this.password);
+        this.wallet = this.walletGenerationService.newP2wpkh(this.passphrase, this.environment.network)
     }
 
     clean() {
-        this.wallet = null;
-        this.password = null;
-        this.encryptedKey = null;
-        this.usePassphrase = null;
-        this.useNativeSegwit = null;
+        this.wallet = null
+        this.passphrase = null
+        this.encryptedKey = null
+        this.usePassphrase = null
+        this.useNativeSegwit = null
     }
 
 }

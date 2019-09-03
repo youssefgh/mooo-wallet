@@ -1,14 +1,16 @@
 import * as bitcoinjs from 'bitcoinjs-lib';
+import { Derived } from './derived';
 
 export class Transaction {
 
-    id: string;
-    vout: number;
-    satoshis: number;
-    amount:  number;
-    height: number;
-    confirmations: number;
-    
-    inList = new Array<bitcoinjs.In>();
+    id: string
+    vout: number
+    satoshis: number
+    amount:  number
+    height: number
+    confirmations: number
+    derived: Derived
+    inCount: number
+    ecPair: bitcoinjs.ECPair.ECPairInterface
 
 }

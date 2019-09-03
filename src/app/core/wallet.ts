@@ -1,8 +1,9 @@
 
 export class Wallet {
 
-    address: string;
-    wif: string;
-    mnemonic: string;
+    address: string
+    xpub: string
+    wif: string
+    mnemonic: string
 
 }

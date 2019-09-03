@@ -1,4 +1,4 @@
-import {Component, OnInit, Input} from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 
 declare var M: any;
 
@@ -14,16 +14,11 @@ export class NavigationBarComponent implements OnInit {
     header: string;
     sideNav: any;
 
-    constructor() {}
+    constructor() { }
 
     ngOnInit() {
-        let sideNavElement = document.querySelector('#slide-out');
-        this.sideNav = new M.Sidenav(sideNavElement, {});
-    }
-
-    //TODO remove workaround
-    openSideNav() {
-        this.sideNav.open();
+        let sideNavElement = document.querySelector('#slide-out')
+        this.sideNav = new M.Sidenav(sideNavElement, {})
     }
 
 }

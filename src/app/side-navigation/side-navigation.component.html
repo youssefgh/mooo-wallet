@@ -6,8 +6,23 @@
     </li>
     <li><a routerLink="/CreateWallet"><i class="material-icons">create</i>Create Wallet</a></li>
     <li><a routerLink="/Balance"><i class="material-icons">account_balance_wallet</i>Balance</a></li>
-    <li><a class="bold" routerLink="/Send"><i class="material-icons">payment</i>Send</a></li>
-    <li><a class="bold" routerLink="/About"><i class="material-icons">info</i>About</a></li>
+    <li><a routerLink="/Send"><i class="material-icons">payment</i>Send</a></li>
+      <li class="no-padding">
+        <ul class="collapsible collapsible-accordion">
+          <li>
+              <a class="collapsible-header">Advanced<i class="material-icons">all_inclusive</i><i class="material-icons right">arrow_drop_down</i></a>
+            <div class="collapsible-body">
+              <ul>
+                <!-- <li><a routerLink="/MnemonicToWif">Mnemonic To WIF</a></li> -->
+                <li><a routerLink="/ExtendedKeyDerivation"><i class="material-icons">call_split</i>Extended Key Derivation</a></li>
+                <li><a routerLink="/MnemonicDerivation"><i class="material-icons">call_split</i>Mnemonic Derivation</a></li>
+              </ul>
+            </div>
+          </li>
+        </ul>
+      </li>
+    <li><a routerLink="/About"><i class="material-icons">info</i>About</a></li>
+    
 <!--    <li><div class="divider"></div></li>
     <li><a class="subheader">Send</a></li>
     <li><a class="bold" routerLink="/CreateTransaction"><i class="material-icons">payment</i>Create Transaction</a></li>

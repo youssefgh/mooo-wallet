@@ -1,43 +1,42 @@
-import {environment} from '../environments/environment';
-import {WalletGenerationService} from './wallet-generation.service';
-import {Injectable} from '@angular/core';
-import {HttpClient, HttpHeaders, HttpErrorResponse} from '@angular/common/http';
+import { WalletGenerationService } from './wallet-generation.service';
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import * as Wif from 'wif';
-import {Big} from 'big.js';
-import {Transaction} from './core/transaction';
-import {Call} from './core/electrum/call';
-import {Procedure} from './core/electrum/procedure';
-import {Output} from './core/output';
-import {Fee} from './core/bitcoinfees/fee';
+import { Big } from 'big.js';
+import { Transaction } from './core/transaction';
+import { Call } from './core/electrum/call';
+import { Procedure } from './core/electrum/procedure';
+import { Output } from './core/output';
+import { Fee } from './core/bitcoinfees/fee';
+import { ConversionService } from './conversion.service';
+import { map } from 'rxjs/operators';
+import { JsonRpcResponse } from './core/electrum/json-rpc-response';
+import { throwError } from 'rxjs';
+import { Derived } from './core/derived';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class SendService {
 
-    environment = environment;
-
-    constructor(private walletGenerationService: WalletGenerationService,
-        private httpClient: HttpClient) {}
+    constructor(private httpClient: HttpClient, private walletGenerationService: WalletGenerationService,
+        private conversionService: ConversionService) { }
 
     calculateBalance(utxoArray: Transaction[]) {
-        let balance = new Big(0);
+        let balance = new Big(0)
         for (let utxo of utxoArray) {
-            balance = balance.plus(this.satoshiToBitcoin(utxo.satoshis));
-            balance.plus(new Big(0));
+            balance = balance.plus(this.conversionService.satoshiToBitcoin(utxo.satoshis))
+            balance.plus(new Big(0))
         }
-        return balance;
+        return balance
     }
 
     feeForEstimatedConfirmationTime(minutes: number, feeArray: Fee[]) {
         for (let fee of feeArray) {
             if (fee.maxMinutes < 60) {
-                return fee;
+                return fee
             }
         }
-    }
-
-    satoshiToBitcoin(satoshi: number): Big {
-        return new Big(satoshi).times(new Big(0.00000001));
     }
 
     removeTailingZeros(text: string) {
@@ -47,95 +46,151 @@ export class SendService {
         if (text[text.length - 1] === ".") {
             text = text.substring(0, text.length - 1)
         }
-        return text;
+        return text
     }
 
     isValidAddress(addressString: string, network: bitcoinjs.Network) {
         try {
-            bitcoinjs.address.toOutputScript(addressString, network);
-            return true;
+            bitcoinjs.address.toOutputScript(addressString, network)
+            return true
         } catch (e) {
-            return false;
+            return false
         }
     }
 
-    createTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], from: string, mnemonic: string, password: string) {
-        let transactionBuilder = new bitcoinjs.TransactionBuilder(this.environment.network);
+    createMnemonicTransaction(mnemonic: string, passphrase: string, xpub: string, outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
+        utxoArray.forEach(transaction => {
+            let wif = this.walletGenerationService.indexNodeFromMnemonic(mnemonic, passphrase, xpub, transaction.derived, network).toWIF()
+            let ecPair = bitcoinjs.ECPair.fromWIF(wif, network)
+            transaction.ecPair = ecPair
+        })
+        return this.createTransaction(outputArray, changeOutput, utxoArray, network)
+    }
+
+    createWifTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], from: string, wif: string, passphrase: string, network: bitcoinjs.Network) {
+        let ecPair = this.walletGenerationService.ecPairFromWif(wif, passphrase, network)
+        utxoArray.forEach(transaction => {
+            transaction.ecPair = ecPair
+        })
+        return this.createTransaction(outputArray, changeOutput, utxoArray, network)
+    }
+
+    createTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
+        let transactionBuilder = new bitcoinjs.TransactionBuilder(network)
         for (let i = 0; i < outputArray.length; i++) {
-            let output = outputArray[i];
-            transactionBuilder.addOutput(output.destination, output.amountInSatochi());
+            let output = outputArray[i]
+            transactionBuilder.addOutput(output.destination, output.amountInSatochi())
         }
         if (changeOutput !== null && !changeOutput.amount.eq(0)) {
-            transactionBuilder.addOutput(changeOutput.destination, changeOutput.amountInSatochi());
+            transactionBuilder.addOutput(changeOutput.destination, changeOutput.amountInSatochi())
         }
-        let ecPair = this.walletGenerationService.ecPairFromMnemonic(mnemonic, password);
-        if (this.walletGenerationService.isP2wpkhAddress(from, ecPair)) {
-            let pubKeyHash = bitcoinjs.crypto.hash160(ecPair.getPublicKeyBuffer())
-            let scriptPubKey = bitcoinjs.script.witnessPubKeyHash.output.encode(pubKeyHash)
-            for (let i = 0; i < utxoArray.length; i++) {
-                let utxo = utxoArray[i];
-                transactionBuilder.addInput(utxo.id, utxo.vout, null, scriptPubKey);
+        for (let i = 0; i < utxoArray.length; i++) {
+            let utxo = utxoArray[i]
+            if (utxo.derived.purpose === 84) {
+                let p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.ecPair.publicKey, network: network })
+                transactionBuilder.addInput(utxo.id, utxo.vout, null, p2wpkh.output)
+            } else if (utxo.derived.purpose === 49) {
+                let p2pk = bitcoinjs.payments.p2pk({ pubkey: utxo.ecPair.publicKey, network: utxo.ecPair.network })
+                let p2wsh = bitcoinjs.payments.p2wsh({ redeem: p2pk, network: utxo.ecPair.network })
+                // transactionBuilder.addInput(utxo.id, utxo.vout, null, p2wsh.output)
+                transactionBuilder.addInput(utxo.id, utxo.vout)
+            } else if (utxo.derived.purpose === 44) {
+                transactionBuilder.addInput(utxo.id, utxo.vout)
+            } else {
+                throw new Error("Incompatible purpose " + utxo.derived.purpose)
             }
-            for (let i = 0; i < utxoArray.length; i++) {
-                let utxo = utxoArray[i];
-                transactionBuilder.sign(i, ecPair, null, null, utxo.satoshis);
-            }
-        } else if (this.walletGenerationService.isP2wpkhInP2shAddress(from, ecPair)) {
-            for (let i = 0; i < utxoArray.length; i++) {
-                let utxo = utxoArray[i];
-                transactionBuilder.addInput(utxo.id, utxo.vout);
-            }
-            for (let i = 0; i < utxoArray.length; i++) {
-                let utxo = utxoArray[i];
-                transactionBuilder.sign(i, ecPair, this.walletGenerationService.redeemScriptFrom(ecPair), null, utxo.satoshis);
-            }
-        } else if (this.walletGenerationService.isP2pkhAddress(from, ecPair)) {
-            for (let i = 0; i < utxoArray.length; i++) {
-                let utxo = utxoArray[i];
-                transactionBuilder.addInput(utxo.id, utxo.vout);
-            }
-            for (let i = 0; i < utxoArray.length; i++) {
-                transactionBuilder.sign(i, ecPair);
-            }
-        } else {
-            throw new Error('Spending from this address is unsupported');
         }
-        let transaction = transactionBuilder.build();
-        return transaction;
+        for (let i = 0; i < utxoArray.length; i++) {
+            let utxo = utxoArray[i]
+            if (utxo.derived.purpose === 84) {
+                transactionBuilder.sign(i, utxo.ecPair, null, null, utxo.satoshis)
+            } else if (utxo.derived.purpose === 49) {
+                // let p2pk = bitcoinjs.payments.p2pk({ pubkey: utxo.ecPair.publicKey, network: utxo.ecPair.network })
+                // let p2wsh = bitcoinjs.payments.p2wsh({ redeem: p2pk, network: utxo.ecPair.network })
+                // transactionBuilder.sign(i, utxo.ecPair, null, null, utxo.satoshis, p2wsh.redeem.output)
+                const p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.ecPair.publicKey, network: network })
+                const p2sh = bitcoinjs.payments.p2sh({ redeem: p2wpkh, network: network })
+                transactionBuilder.sign(i, utxo.ecPair, p2sh.redeem.output, null, utxo.satoshis);
+            } else if (utxo.derived.purpose === 44) {
+                transactionBuilder.sign(i, utxo.ecPair)
+            } else {
+                throw new Error("Incompatible purpose " + utxo.derived.purpose)
+            }
+        }
+
+        let transaction = transactionBuilder.build()
+        return transaction
     }
 
-    loadUTXO(address: string) {
-        let call = new Call(environment.electrumServer, environment.electrumPort);
-        let procedure = new Procedure(1, "server.version");
-        procedure.params.push(environment.electrumProtocol);
-        procedure.params.push(environment.electrumProtocol);
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(2, "blockchain.headers.subscribe");
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(3, "blockchain.relayfee");
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(4, "blockchain.scripthash.listunspent");
-        procedure.params.push(this.scriptHashFrom(address));
-        call.procedureList.push(procedure.toString());
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call);
+    loadUTXO(derivedList: Array<Derived>, environment) {
+        let call = new Call(environment.electrumServer, environment.electrumPort)
+        let procedure = new Procedure(1, "server.version")
+        procedure.params.push(environment.electrumProtocol)
+        procedure.params.push(environment.electrumProtocol)
+        call.procedureList.push(procedure.toString())
+        procedure = new Procedure(2, "blockchain.headers.subscribe")
+        call.procedureList.push(procedure.toString())
+        procedure = new Procedure(3, "blockchain.relayfee")
+        call.procedureList.push(procedure.toString())
+        let i = 4
+        derivedList.forEach(derived => {
+            procedure = new Procedure(i, "blockchain.scripthash.listunspent")
+            procedure.params.push(this.scriptHashFrom(derived.address, environment))
+            call.procedureList.push(procedure.toString())
+            i++
+        })
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call).pipe(map((data => {
+            let responseList = new Array<JsonRpcResponse>()
+            for (let responseString of data) {
+                let response = JsonRpcResponse.from(responseString)
+                if (response.error) {
+                    throwError(response.error)
+                }
+                responseList.push(response)
+            }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1)
+            let lastBlockHeight: number = responseList[1].result.height
+            let minimumRelayFeeInBtc = responseList[2].result
+            let utxoArray = new Array<Transaction>()
+            for (let index = 3; index < responseList.length; index++) {
+                const utxoList = responseList[index].result
+                for (let item of utxoList) {
+                    let utxo = new Transaction()
+                    utxo.id = item.tx_hash
+                    utxo.vout = item.tx_pos
+                    utxo.satoshis = item.value
+                    utxo.height = item.height
+                    //TODO use big
+                    utxo.amount = parseFloat(this.conversionService.satoshiToBitcoin(utxo.satoshis).toFixed(8))
+                    utxo.derived = derivedList[index - 3]
+                    if (utxo.height > 0)
+                        utxo.confirmations = lastBlockHeight - utxo.height + 1
+                    else
+                        utxo.confirmations = 0
+                    utxoArray.push(utxo)
+                }
+                utxoArray = utxoArray.filter((utxo: Transaction) => utxo.confirmations > 0)
+            }
+            return { 'minimumRelayFeeInBtc': minimumRelayFeeInBtc, 'utxoArray': utxoArray }
+        })))
     }
 
-    scriptHashFrom(addressString: string) {
-        let outputScript = bitcoinjs.address.toOutputScript(addressString, this.environment.network);
-        let reversedScriptHash = new Buffer(bitcoinjs.crypto.sha256(outputScript).reverse());
-        return reversedScriptHash.toString("hex");
+    scriptHashFrom(addressString: string, environment) {
+        let outputScript = bitcoinjs.address.toOutputScript(addressString, environment.network)
+        let reversedScriptHash = new Buffer(bitcoinjs.crypto.sha256(outputScript).reverse())
+        return reversedScriptHash.toString("hex")
     }
 
-    broadcast(transaction: string) {
-        let call = new Call(environment.electrumServer, environment.electrumPort);
-        let procedure = new Procedure(1, "server.version");
-        procedure.params.push(environment.electrumProtocol);
-        procedure.params.push(environment.electrumProtocol);
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(2, "blockchain.transaction.broadcast");
-        procedure.params.push(transaction);
-        call.procedureList.push(procedure.toString());
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call);
+    broadcast(transaction: string, environment) {
+        let call = new Call(environment.electrumServer, environment.electrumPort)
+        let procedure = new Procedure(1, "server.version")
+        procedure.params.push(environment.electrumProtocol)
+        procedure.params.push(environment.electrumProtocol)
+        call.procedureList.push(procedure.toString())
+        procedure = new Procedure(2, "blockchain.transaction.broadcast")
+        procedure.params.push(transaction)
+        call.procedureList.push(procedure.toString())
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call)
     }
 
 }

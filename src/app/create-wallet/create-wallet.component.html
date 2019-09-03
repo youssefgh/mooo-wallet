@@ -5,39 +5,50 @@
         <div class="row center-align">
             <div *ngIf="!wallet" class="col s12">
                 <label>
-                    <input type="checkbox" id="nativeSegwitActivation" [(ngModel)]="useNativeSegwit"/>
+                    <input type="checkbox" id="nativeSegwitActivation" [(ngModel)]="useNativeSegwit" />
                     <span for="nativeSegwitActivation">Native Segwit</span>
                 </label>
             </div>
             <div *ngIf="!wallet" class="col s12 input-field">
-                <input id="password" type="text" [(ngModel)]="password">
-                <label for="password">Password (optional)</label>
+                <input id="passphrase" type="text" [(ngModel)]="passphrase">
+                <label for="passphrase">Passphrase (optional)</label>
             </div>
         </div>
         <div class="row">
             <div class="center-align">
-                <a *ngIf="!useNativeSegwit && (!usePassphrase || passphrase) && !wallet" class="waves-effect waves-light btn-large" 
-                    [ngClass]="{'pulse': wallet == null}" (click)="newSegwitP2wpkhInP2sh()">Generate</a>
-                <a *ngIf="useNativeSegwit && (!usePassphrase || passphrase) && !wallet" class="waves-effect waves-light btn-large" 
-                    [ngClass]="{'pulse': wallet == null}" (click)="newP2wpkh()">Generate</a>
+                <a *ngIf="!useNativeSegwit && (!usePassphrase || passphrase) && !wallet"
+                    class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
+                    (click)="newSegwitP2wpkhInP2sh()">Generate</a>
+                <a *ngIf="useNativeSegwit && (!usePassphrase || passphrase) && !wallet"
+                    class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
+                    (click)="newP2wpkh()">Generate</a>
+            </div>
+        </div>
+        <div *ngIf="wallet" class="row">
+            <div class="center-align">
+                <a class="btn waves-effect waves-light" [routerLink]="['/ExtendedKeyDerivation']"
+                    [queryParams]="{key: wallet.xpub}">
+                    <i class="material-icons right">send</i>
+                    Addresses from extended public key
+                </a>
             </div>
         </div>
         <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="address" value="{{wallet.address}}" readonly/>
-                <label for="address" class="active">Address</label>
+                <input id="xpub" value="{{wallet.xpub}}" readonly />
+                <label for="xpub" class="active">Extended public key</label>
             </div>
         </div>
         <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="mnemonic" value="{{wallet.mnemonic}}" readonly/>
+                <input id="mnemonic" value="{{wallet.mnemonic}}" readonly />
                 <label for="mnemonic" class="active">Mnemonic</label>
             </div>
         </div>
-        <div *ngIf="wallet && password" class="row">
+        <div *ngIf="wallet && passphrase" class="row">
             <div class="input-field">
-                <input id="password" value="{{password}}" readonly/>
-                <label for="password" class="active">Password</label>
+                <input id="passphrase" value="{{passphrase}}" readonly />
+                <label for="passphrase" class="active">Passphrase</label>
             </div>
         </div>
         <div class="row">

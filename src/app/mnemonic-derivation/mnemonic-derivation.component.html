@@ -1,0 +1,106 @@
+<navigation-bar header="Mnemonic Derivation"></navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row center-align">
+            <div class="col s12 input-field">
+                <input id="mnemonic" type="text" [(ngModel)]="mnemonic" />
+                <label for="mnemonic">Mnemonic</label>
+            </div>
+        </div>
+        <div class="row center-align">
+            <div class="col s12 input-field">
+                <input id="passphrase" type="text" [(ngModel)]="passphrase">
+                <label for="passphrase">Passphrase (optional)</label>
+            </div>
+        </div>
+        <div class="row center-align">
+            <div class="col s3">
+                <label>
+                    <input name="derivationPathGroup" type="radio" [checked]="purpose === 44" (click)="setBIP(44)" />
+                    <span>BIP44</span>
+                </label>
+            </div>
+            <div class="col s3">
+                <label>
+                    <input name="derivationPathGroup" type="radio" [checked]="purpose === 49" (click)="setBIP(49)" />
+                    <span>BIP49</span>
+                </label>
+            </div>
+            <div class="col s3">
+                <label>
+                    <input name="derivationPathGroup" type="radio" [checked]="purpose === 84" (click)="setBIP(84)" />
+                    <span>BIP84</span>
+                </label>
+            </div>
+            <div class="col s3">
+                <label>
+                    <input name="derivationPathGroup" type="radio" (click)="setCustom()" />
+                    <span>Custom</span>
+                </label>
+            </div>
+        </div>
+        <div class="row center-align" *ngIf="customDerivation">
+            <div class="col s12 input-field">
+                <input id="derivationPath" type="text" [(ngModel)]="customDerivationPath">
+                <label for="derivationPath">Derivation Path</label>
+            </div>
+        </div>
+        <div class="row center-align" *ngIf="!customDerivation">
+            <div class="col s12 input-field">
+                <input id="derivationPath" type="text" readonly [value]="derivationPath()">
+                <label for="derivationPath">Derivation Path</label>
+            </div>
+        </div>
+        <div class="row center-align" *ngIf="!customDerivation">
+            <div class="col s12 input-field">
+                <input id="account" type="number" min="0" [(ngModel)]="account">
+                <label for="account">Account</label>
+            </div>
+            <div class="col s12 input-field">
+                <input id="change" type="number" min="0" max="1" [(ngModel)]="change">
+                <label for="change">Change</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="center-align">
+                <a class="waves-effect waves-light btn-large" [ngClass]="{'pulse': !derivedArray}"
+                    (click)="derive()">Derive</a>
+            </div>
+        </div>
+        <div #scrollTarget></div>
+        <div *ngIf="!customDerivation && derivedArray && derivedArray.length !== 0" class="row center-align">
+            <div class="col s12 input-field">
+                <input id="xpriv" type="text" [value]="xpriv">
+                <label for="xpriv">Extended private key (Account {{account}})</label>
+            </div>
+            <div class="col s12 input-field">
+                <input id="xpub" type="text" [value]="xpub">
+                <label for="xpub">Extended public key (Account {{account}})</label>
+            </div>
+        </div>
+        <div class="row">
+            <table *ngIf="derivedArray && derivedArray.length !== 0" class="highlight centered">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Address</th>
+                        <th>WIF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let derived of derivedArray; let i = index">
+                        <td>{{i}}</td>
+                        <td>{{derived.address}}</td>
+                        <td>{{derived.wif}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="center-align">
+                <a *ngIf="derivedArray" class="waves-effect waves-light btn" (click)="more()">More</a>
+            </div>
+        </div>
+    </div>
+</main>
