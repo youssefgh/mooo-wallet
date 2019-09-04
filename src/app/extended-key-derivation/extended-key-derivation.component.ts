@@ -22,7 +22,7 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     fromIndex = 0
     toIndex = 10
 
-    @ViewChild('scrollTarget')
+    @ViewChild('scrollTarget', { static: true })
     scrollTarget: ElementRef;
 
     key: string

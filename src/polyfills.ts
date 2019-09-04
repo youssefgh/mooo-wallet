@@ -69,3 +69,10 @@ import 'zone.js/dist/zone';  // Included with Angular CLI.
  * Need to import at least one locale-data with intl.
  */
 // import 'intl/locale-data/jsonp/en';
+
+// Add to window, assigning the value of window itself.
+import * as process from "process";
+import { Buffer } from "buffer";
+(window as any).process = process;
+//Workarround for libs(create-hash) that use new Buffer("")
+(window as any).Buffer = Buffer;

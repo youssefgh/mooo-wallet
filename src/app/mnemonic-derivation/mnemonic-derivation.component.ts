@@ -27,7 +27,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     fromIndex = 0
     toIndex = 10
 
-    @ViewChild('scrollTarget')
+    @ViewChild('scrollTarget', { static: true })
     scrollTarget: ElementRef;
 
     mnemonic: string = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
