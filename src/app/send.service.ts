@@ -139,7 +139,7 @@ export class SendService {
             call.procedureList.push(procedure.toString())
             i++
         })
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call).pipe(map((data => {
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/api/proxy', call).pipe(map((data => {
             let responseList = new Array<JsonRpcResponse>()
             for (let responseString of data) {
                 let response = JsonRpcResponse.from(responseString)
@@ -190,7 +190,7 @@ export class SendService {
         procedure = new Procedure(2, "blockchain.transaction.broadcast")
         procedure.params.push(transaction)
         call.procedureList.push(procedure.toString())
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call)
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/api/proxy', call)
     }
 
 }

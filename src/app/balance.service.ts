@@ -30,7 +30,7 @@ export class BalanceService {
             procedure.params.push(this.sendService.scriptHashFrom(address, environment))
             call.procedureList.push(procedure.toString())
         })
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call).pipe(map(data => {
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/api/proxy', call).pipe(map(data => {
             let responseList = new Array<JsonRpcResponse>()
             for (let responseString of data) {
                 let response = JsonRpcResponse.from(responseString)
@@ -58,7 +58,7 @@ export class BalanceService {
             procedure.params.push(this.sendService.scriptHashFrom(derived.address, environment))
             call.procedureList.push(procedure.toString())
         })
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call).pipe(map(data => {
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/api/proxy', call).pipe(map(data => {
             let responseList = new Array<JsonRpcResponse>()
             for (let responseString of data) {
                 let response = JsonRpcResponse.from(responseString)
@@ -103,7 +103,7 @@ export class BalanceService {
             procedure.params.push(id)
             call.procedureList.push(procedure.toString())
         }
-        return this.httpClient.post<any[]>(environment.proxyAddress + '/tcp-rest-proxy/api/proxy', call)
+        return this.httpClient.post<any[]>(environment.proxyAddress + '/api/proxy', call)
     }
 
     transactionOf(derivedList: Array<Derived>, transactionArrayArray: Array<Array<Transaction>>, environment) {
