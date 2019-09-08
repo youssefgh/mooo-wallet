@@ -10,7 +10,7 @@ export const environment = {
     network: networks.testnet,
     electrumServer : '172.17.0.1',
     electrumPort : 50011,
-    electrumProtocol : '1.2',
+    electrumProtocol : '1.4',
     proxyAddress : 'https://proxy.testnet.wallet.mooo.tech:8443',
     bitcoinfeesAddress: 'https://fee.testnet.wallet.mooo.tech:8443/api/v1/fees/list',
     btc: 'tBTC',

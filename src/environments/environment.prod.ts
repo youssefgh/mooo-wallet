@@ -10,7 +10,7 @@ export const environment = {
     network: networks.bitcoin,
     electrumServer : '172.17.0.1',
     electrumPort : 50001,
-    electrumProtocol : '1.2',
+    electrumProtocol : '1.4',
     proxyAddress : 'https://proxy.wallet.mooo.tech:8443',
     bitcoinfeesAddress: 'https://fee.wallet.mooo.tech:8443/api/v1/fees/list',
     btc: 'BTC',

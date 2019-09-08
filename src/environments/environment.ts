@@ -11,7 +11,7 @@ export const environment = {
     electrumServer : 'localhost',
     electrumPort : 50111,
     electrumProtocol : '1.4',
-    proxyAddress : 'http://localhost:8100',
+    proxyAddress : 'http://localhost:8100/tcp-rest-proxy',
     bitcoinfeesAddress: 'https://bitcoinfees.earn.com/api/v1/fees/list',
     btc: 'tBTC',
     satoshi: 'tSatoshi'
