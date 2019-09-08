@@ -13,6 +13,8 @@ import { AboutComponent } from './about/about.component';
 import { MnemonicDerivationComponent } from './mnemonic-derivation/mnemonic-derivation.component';
 import { ExtendedKeyDerivationComponent } from './extended-key-derivation/extended-key-derivation.component';
 import { AppRoutingModule } from './app-routing.module';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
 
 @NgModule({
     declarations: [
@@ -30,7 +32,8 @@ import { AppRoutingModule } from './app-routing.module';
         BrowserModule,
         FormsModule,
         HttpClientModule,
-        AppRoutingModule
+        AppRoutingModule,
+        ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
     ],
     providers: [],
     bootstrap: [AppComponent]
