@@ -25,12 +25,13 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     account = 0
     change = 0
     fromIndex = 0
-    toIndex = 10
+    defaultTo = 10
+    toIndex = this.defaultTo
 
     @ViewChild('scrollTarget', { static: true })
-    scrollTarget: ElementRef;
+    scrollTarget: ElementRef
 
-    mnemonic: string = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+    mnemonic: string
     passphrase: string
 
     xpriv: string
@@ -70,7 +71,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
             try {
                 finalNode = node.derivePath(this.customDerivationPath)
             } catch (e) {
-                M.toast({ html: 'Incorrect derivation path !', classes: 'red' });
+                M.toast({ html: 'Incorrect derivation path !', classes: 'red' })
                 console.error(e)
                 return
             }
@@ -81,11 +82,11 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
             finalNode = accountNode.derive(this.change)
         }
         this.derivedArray = this.walletGenerationService.deriveList(this.purpose, finalNode, this.fromIndex, this.toIndex, environment.network)
-        this.scrollTarget.nativeElement.scrollIntoView();
+        this.scrollTarget.nativeElement.scrollIntoView()
     }
 
     more() {
-        this.toIndex += 10
+        this.toIndex += this.defaultTo
         this.derive()
     }
 

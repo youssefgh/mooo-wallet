@@ -20,7 +20,6 @@
                     (click)="deriveChange()">Derive Change Addresses</a>
             </div>
         </div>
-        <div #scrollTarget></div>
         <div class="row">
             <table *ngIf="derivedArray && derivedArray.length !== 0" class="highlight centered">
                 <thead>
@@ -42,5 +41,6 @@
                 <a *ngIf="derivedArray" class="waves-effect waves-light btn" (click)="more()">More</a>
             </div>
         </div>
+        <div #scrollTarget></div>
     </div>
 </main>

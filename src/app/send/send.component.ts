@@ -136,18 +136,25 @@ export class SendComponent implements OnInit {
 
     loadUTXOFromList(derivedList: Array<Derived>) {
         this.sendService.loadUTXO(derivedList, environment).subscribe(data => {
-            this.minimumRelayFeeInBtc = data.minimumRelayFeeInBtc
-            this.utxoArray = data.utxoArray
-            if (this.utxoArray.length === 0) {
-                M.toast({ html: 'This wallet doesn\'t have confirmed balance' })
-                return
-            }
-            this.updateBalance()
-            this.changeOutput.amount = this.balanceBig
-        }, (error: HttpErrorResponse) => {
-            M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
-            M.toast({ html: 'Can\'t list unspent ! Error : ' + error.message })
-            console.error(error)
+            this.sendService.rawTransactionListFrom(data.utxoArray, environment).subscribe(rawTransactionArray => {
+                let i = 0
+                data.utxoArray.forEach(transaction => {
+                    transaction.transactionHex = rawTransactionArray[i]
+                    i++
+                })
+                this.minimumRelayFeeInBtc = data.minimumRelayFeeInBtc
+                this.utxoArray = data.utxoArray
+                if (this.utxoArray.length === 0) {
+                    M.toast({ html: 'This wallet doesn\'t have confirmed balance' })
+                    return
+                }
+                this.updateBalance()
+                this.changeOutput.amount = this.balanceBig
+            }, (error: HttpErrorResponse) => {
+                M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
+                M.toast({ html: 'Can\'t list unspent ! Error : ' + error.message })
+                console.error(error)
+            })
         })
     }
 

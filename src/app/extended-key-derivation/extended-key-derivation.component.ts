@@ -20,10 +20,11 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     // purpose: number
     change: number
     fromIndex = 0
-    toIndex = 10
+    defaultTo = 10
+    toIndex = this.defaultTo
 
     @ViewChild('scrollTarget', { static: true })
-    scrollTarget: ElementRef;
+    scrollTarget: ElementRef
 
     key: string
 
@@ -39,7 +40,7 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
                     html: 'You wrote the private key in your browser address bar, which means it is now probably stored in your browser history !\
                  Please send all the funds associated with this key to a new wallet and never use this key again.\
                   Or immediately delete your browser history and make sure your computer is free from malwares', classes: 'red', displayLength: 9000000000
-                });
+                })
             }
         }
     }
@@ -68,17 +69,17 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
         } catch (e) {
             //TODO review
             console.error(e)
-            M.toast({ html: e, classes: 'red' });
+            M.toast({ html: e, classes: 'red' })
             return
         }
         let changeNode = nodeAndPurpose.node.derive(change)
 
         this.derivedArray = this.walletGenerationService.deriveList(nodeAndPurpose.purpose, changeNode, this.fromIndex, this.toIndex, environment.network)
-        this.scrollTarget.nativeElement.scrollIntoView();
+            this.scrollTarget.nativeElement.scrollIntoView()
     }
 
     more() {
-        this.toIndex += 10
+        this.toIndex += this.defaultTo
         this.derive()
     }
 

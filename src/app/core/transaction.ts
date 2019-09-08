@@ -12,5 +12,6 @@ export class Transaction {
     derived: Derived
     inCount: number
     ecPair: bitcoinjs.ECPair.ECPairInterface
+    transactionHex: string
 
 }

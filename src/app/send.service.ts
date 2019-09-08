@@ -76,49 +76,52 @@ export class SendService {
     }
 
     createTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
-        let transactionBuilder = new bitcoinjs.TransactionBuilder(network)
-        for (let i = 0; i < outputArray.length; i++) {
-            let output = outputArray[i]
-            transactionBuilder.addOutput(output.destination, output.amountInSatochi())
-        }
-        if (changeOutput !== null && !changeOutput.amount.eq(0)) {
-            transactionBuilder.addOutput(changeOutput.destination, changeOutput.amountInSatochi())
-        }
+        let psbt = new bitcoinjs.Psbt({ network: network })
         for (let i = 0; i < utxoArray.length; i++) {
             let utxo = utxoArray[i]
             if (utxo.derived.purpose === 84) {
-                let p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.ecPair.publicKey, network: network })
-                transactionBuilder.addInput(utxo.id, utxo.vout, null, p2wpkh.output)
+                let transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex)
+                psbt.addInput({
+                    hash: utxo.id,
+                    index: utxo.vout,
+                    witnessUtxo: {
+                        script: transaction.outs[utxo.vout].script,
+                        value: utxo.satoshis
+                    }
+                })
             } else if (utxo.derived.purpose === 49) {
-                let p2pk = bitcoinjs.payments.p2pk({ pubkey: utxo.ecPair.publicKey, network: utxo.ecPair.network })
-                let p2wsh = bitcoinjs.payments.p2wsh({ redeem: p2pk, network: utxo.ecPair.network })
-                // transactionBuilder.addInput(utxo.id, utxo.vout, null, p2wsh.output)
-                transactionBuilder.addInput(utxo.id, utxo.vout)
-            } else if (utxo.derived.purpose === 44) {
-                transactionBuilder.addInput(utxo.id, utxo.vout)
-            } else {
-                throw new Error("Incompatible purpose " + utxo.derived.purpose)
-            }
-        }
-        for (let i = 0; i < utxoArray.length; i++) {
-            let utxo = utxoArray[i]
-            if (utxo.derived.purpose === 84) {
-                transactionBuilder.sign(i, utxo.ecPair, null, null, utxo.satoshis)
-            } else if (utxo.derived.purpose === 49) {
-                // let p2pk = bitcoinjs.payments.p2pk({ pubkey: utxo.ecPair.publicKey, network: utxo.ecPair.network })
-                // let p2wsh = bitcoinjs.payments.p2wsh({ redeem: p2pk, network: utxo.ecPair.network })
-                // transactionBuilder.sign(i, utxo.ecPair, null, null, utxo.satoshis, p2wsh.redeem.output)
                 const p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.ecPair.publicKey, network: network })
                 const p2sh = bitcoinjs.payments.p2sh({ redeem: p2wpkh, network: network })
-                transactionBuilder.sign(i, utxo.ecPair, p2sh.redeem.output, null, utxo.satoshis);
+                let transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex)
+                psbt.addInput({
+                    hash: utxo.id,
+                    index: utxo.vout,
+                    witnessUtxo: {
+                        script: transaction.outs[utxo.vout].script,
+                        value: utxo.satoshis
+                    },
+                    redeemScript: p2sh.redeem.output
+                })
             } else if (utxo.derived.purpose === 44) {
-                transactionBuilder.sign(i, utxo.ecPair)
+                psbt.addInput({ hash: utxo.id, index: utxo.vout, nonWitnessUtxo: Buffer.from(utxo.transactionHex, 'hex') })
             } else {
                 throw new Error("Incompatible purpose " + utxo.derived.purpose)
             }
         }
-
-        let transaction = transactionBuilder.build()
+        for (let i = 0; i < outputArray.length; i++) {
+            let output = outputArray[i]
+            psbt.addOutput({ address: output.destination, value: output.amountInSatochi() })
+        }
+        if (changeOutput !== null && !changeOutput.amount.eq(0)) {
+            psbt.addOutput({ address: changeOutput.destination, value: changeOutput.amountInSatochi() })
+        }
+        for (let i = 0; i < utxoArray.length; i++) {
+            let utxo = utxoArray[i]
+            psbt.signInput(i, utxo.ecPair)
+            psbt.validateSignaturesOfInput(i)
+        }
+        psbt.finalizeAllInputs()
+        let transaction = psbt.extractTransaction()
         return transaction
     }
 
@@ -173,6 +176,27 @@ export class SendService {
             }
             return { 'minimumRelayFeeInBtc': minimumRelayFeeInBtc, 'utxoArray': utxoArray }
         })))
+    }
+
+    rawTransactionListFrom(utxoArray: Array<Transaction>, environment) {
+        let call = new Call(environment.electrumServer, environment.electrumPort)
+        let procedure = new Procedure(1, "server.version")
+        procedure.params.push(environment.electrumProtocol)
+        procedure.params.push(environment.electrumProtocol)
+        call.procedureList.push(procedure.toString())
+        let i = 1
+        utxoArray.forEach(transaction => {
+            procedure = new Procedure(++i, "blockchain.transaction.get")
+            procedure.params.push(transaction.id)
+            call.procedureList.push(procedure.toString())
+        })
+        return this.httpClient.post<string[]>(environment.proxyAddress + '/api/proxy', call).pipe(map(data => {
+            data = data.map(d => JSON.parse(d))
+                .sort((a, b) => a.id > b.id ? 1 : -1)
+                .slice(1)
+                .map(d => d.result)
+            return data
+        }))
     }
 
     scriptHashFrom(addressString: string, environment) {

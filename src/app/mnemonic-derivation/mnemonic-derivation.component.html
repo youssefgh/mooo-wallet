@@ -68,7 +68,6 @@
                     (click)="derive()">Derive</a>
             </div>
         </div>
-        <div #scrollTarget></div>
         <div *ngIf="!customDerivation && derivedArray && derivedArray.length !== 0" class="row center-align">
             <div class="col s12 input-field">
                 <input id="xpriv" type="text" [value]="xpriv">
@@ -102,5 +101,6 @@
                 <a *ngIf="derivedArray" class="waves-effect waves-light btn" (click)="more()">More</a>
             </div>
         </div>
+        <div #scrollTarget></div>
     </div>
 </main>
