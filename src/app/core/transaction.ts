@@ -6,12 +6,11 @@ export class Transaction {
     id: string
     vout: number
     satoshis: number
-    amount:  number
+    amount: number
     height: number
     confirmations: number
     derived: Derived
     inCount: number
-    ecPair: bitcoinjs.ECPair.ECPairInterface
     transactionHex: string
 
 }

@@ -3,20 +3,27 @@
 <main>
     <div class="container">
         <div class="row">
-            <div class="input-field col s12 xl8 center-align">
-                <input id="source" type="text" [disabled]="confirmedBalance" [(ngModel)]="source"/>
+            <div class="input-field col s10 xl7 center-align">
+                <textarea id="source" class="materialize-textarea" [(ngModel)]="source"
+                    [disabled]="confirmedBalance"></textarea>
                 <label for="source">Address Or Extended Public Key</label>
             </div>
+            <div class="col s2 xl1 file-field input-field">
+                <qr-code-reader (scanned)="onQrScan($event)"></qr-code-reader>
+            </div>
             <div class="col s12 xl4 center-align" style="margin-top: 0.5rem">
-                <a *ngIf="!confirmedBalance" class="waves-effect waves-light btn-large pulse" [ngClass]="{'pulse': source == null}" (click)="loadBalance()">
+                <a *ngIf="!confirmedBalance" class="waves-effect waves-light btn-large pulse"
+                    [ngClass]="{'pulse': source == null}" (click)="loadBalance()">
                     <i class="material-icons left">system_update_alt</i>
                     Load
                 </a>
-                <a [ngClass]="{'hide': confirmedBalance == null}" class="waves-effect waves-light btn-large blue" (click)="reloadBalance()">
+                <a [ngClass]="{'hide': confirmedBalance == null}" class="waves-effect waves-light btn-large blue"
+                    (click)="reloadBalance()">
                     <i class="material-icons left">cached</i>
                     Reload
                 </a>
-                <a [ngClass]="{'hide': confirmedBalance == null}" class="waves-effect waves-light btn-large orange" (click)="clear()">
+                <a [ngClass]="{'hide': confirmedBalance == null}" class="waves-effect waves-light btn-large orange"
+                    (click)="clear()">
                     <i class="material-icons left">eject</i>
                     Clear
                 </a>
@@ -26,24 +33,27 @@
             <div class="row">
                 <div class="col s12 center-align">
                     <h3>
-                        Confirmed Balance : <span class="blue lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{confirmedBalance}}&nbsp;{{environment.btc}}</span>
+                        Confirmed Balance : <span class="blue lighten-4 blue-text text-lighten-2"
+                            style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{confirmedBalance}}&nbsp;{{environment.btc}}</span>
                     </h3>
                 </div>
             </div>
             <div class="row">
                 <div class="col s12 center-align">
                     <h4>
-                        Unconfirmed Balance : <span class="yellow lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{unconfirmedBalance}}&nbsp;{{environment.btc}}</span>
+                        Unconfirmed Balance : <span class="yellow lighten-4 blue-text text-lighten-2"
+                            style="border-radius: 0.3rem; padding: 0.5rem; line-height: 4rem">{{unconfirmedBalance}}&nbsp;{{environment.btc}}</span>
                     </h4>
                 </div>
             </div>
             <div *ngIf="!transactionArray" class="row">
                 <div class="col s12 center-align">
-                    <a class="waves-effect waves-light btn" (click)="loadHistory()"><i class="material-icons left">history</i>Load history</a>
+                    <a class="waves-effect waves-light btn" (click)="loadHistory()"><i
+                            class="material-icons left">history</i>Load history</a>
                 </div>
             </div>
             <div *ngIf="transactionArray" class="row">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>Transaction ID</th>
@@ -55,8 +65,10 @@
                         <tr *ngFor="let transaction of transactionArray; let i = index" [attr.data-index]="i">
                             <td>{{transaction.id}}</td>
                             <td>{{transaction.confirmations}}</td>
-                            <td *ngIf="transaction.amount > 0"><span class="new badge left green" [attr.data-badge-caption]="environment.btc">+{{transaction.amount}}</span></td>
-                            <td *ngIf="transaction.amount < 0"><span class="new badge left red" [attr.data-badge-caption]="environment.btc">{{transaction.amount}}</span></td>
+                            <td *ngIf="transaction.amount > 0"><span class="new badge left green"
+                                    [attr.data-badge-caption]="environment.btc">+{{transaction.amount}}</span></td>
+                            <td *ngIf="transaction.amount < 0"><span class="new badge left red"
+                                    [attr.data-badge-caption]="environment.btc">{{transaction.amount}}</span></td>
                         </tr>
                     </tbody>
                 </table>

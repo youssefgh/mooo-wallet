@@ -17,18 +17,24 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
 
     environment = environment
 
+    key: string
+
+    derivedArray: Array<Derived>
+
     // purpose: number
     change: number
     fromIndex = 0
     defaultTo = 10
     toIndex = this.defaultTo
 
+    selectedQr: string
+    qrModal
+
+    @ViewChild('qrModal', { static: true })
+    qrModalRef: ElementRef
+
     @ViewChild('scrollTarget', { static: true })
     scrollTarget: ElementRef
-
-    key: string
-
-    derivedArray: Array<Derived>
 
     constructor(private route: ActivatedRoute, private walletGenerationService: WalletGenerationService) { }
 
@@ -43,10 +49,21 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
                 })
             }
         }
+        const elem = this.qrModalRef.nativeElement
+        this.qrModal = M.Modal.init(elem, {})
     }
 
     ngAfterContentChecked() {
         M.updateTextFields()
+        const elements = document.getElementsByClassName('materialize-textarea')
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i]
+            M.textareaAutoResize(element)
+        }
+    }
+
+    onQrScan(text: string) {
+        this.key = text
     }
 
     deriveReceiving() {
@@ -63,24 +80,18 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
         if (change === undefined) {
             change = this.change
         }
-        let nodeAndPurpose
-        try {
-            nodeAndPurpose = this.walletGenerationService.nodeFromKey(this.key, environment.network)
-        } catch (e) {
-            //TODO review
-            console.error(e)
-            M.toast({ html: e, classes: 'red' })
-            return
-        }
-        let changeNode = nodeAndPurpose.node.derive(change)
-
-        this.derivedArray = this.walletGenerationService.deriveList(nodeAndPurpose.purpose, changeNode, this.fromIndex, this.toIndex, environment.network)
-            this.scrollTarget.nativeElement.scrollIntoView()
+        this.derivedArray = this.walletGenerationService.derive(this.key, change, this.fromIndex, this.toIndex, environment.network)
+        this.scrollTarget.nativeElement.scrollIntoView()
     }
 
     more() {
         this.toIndex += this.defaultTo
         this.derive()
+    }
+
+    showQr(qr: string) {
+        this.selectedQr = qr
+        this.qrModal.open()
     }
 
 }

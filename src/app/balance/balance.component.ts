@@ -1,6 +1,6 @@
 import { environment } from '../../environments/environment';
 import { SendService } from '../send.service';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterContentChecked } from '@angular/core';
 import { Transaction } from '../core/transaction';
 import { BalanceService } from '../balance.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -20,7 +20,7 @@ declare var M: any;
     templateUrl: './balance.component.html',
     styleUrls: ['./balance.component.css']
 })
-export class BalanceComponent implements OnInit {
+export class BalanceComponent implements OnInit, AfterContentChecked {
 
     environment = environment
     source: string
@@ -47,6 +47,19 @@ export class BalanceComponent implements OnInit {
                 });
             }
         }
+    }
+
+    ngAfterContentChecked() {
+        M.updateTextFields()
+        const elements = document.getElementsByClassName('materialize-textarea')
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i]
+            M.textareaAutoResize(element)
+        }
+    }
+
+    onQrScan(text: string) {
+        this.source = text
     }
 
     loadBalance() {
@@ -102,8 +115,7 @@ export class BalanceComponent implements OnInit {
                     }
                 }
             }, (error: HttpErrorResponse) => {
-                // M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
-                M.toast({ html: 'Error while getting the balance ! ' + error.message })
+                M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' })
                 console.error(error)
             })
         }
@@ -111,7 +123,7 @@ export class BalanceComponent implements OnInit {
 
     loadBalanceFromAddress(address: string) {
         if (address == null || !this.sendService.isValidAddress(address, environment.network)) {
-            M.toast({ html: 'Incorrect address !' })
+            M.toast({ html: 'Incorrect address !', classes: 'red' })
         } else {
             let addressList = new Array
             addressList.push(address)
@@ -131,13 +143,12 @@ export class BalanceComponent implements OnInit {
                 confirmedBalance = confirmedBalance.plus(result.confirmed)
                 unconfirmedBalance = unconfirmedBalance.plus(result.unconfirmed)
             }
-            this.confirmedBalance = this.conversionService.bigSatoshiToBitcoin(confirmedBalance).valueOf()
-            this.unconfirmedBalance = this.conversionService.bigSatoshiToBitcoin(unconfirmedBalance).valueOf()
+            this.confirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(confirmedBalance).valueOf()
+            this.unconfirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(unconfirmedBalance).valueOf()
             this.bigConfirmedBalance = confirmedBalance
             this.bigUnconfirmedBalance = unconfirmedBalance
         }, (error: HttpErrorResponse) => {
-            // M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
-            M.toast({ html: 'Error while getting the balance ! ' + error.message })
+            M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' })
             console.error(error)
         })
     }
@@ -203,8 +214,7 @@ export class BalanceComponent implements OnInit {
                     }
                 }
             }, (error: HttpErrorResponse) => {
-                // M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
-                M.toast({ html: 'Error while getting the balance ! ' + error.message })
+                M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' })
                 console.error(error)
             })
         }
@@ -221,7 +231,7 @@ export class BalanceComponent implements OnInit {
                 let transactionArrayTemp = new Array<Transaction>()
                 for (let transactionArray of transactionArrayArray) {
                     for (let transaction of transactionArray) {
-                        transaction.amount = parseFloat(this.conversionService.satoshiToBitcoin(transaction.satoshis).valueOf())
+                        transaction.amount = this.conversionService.satoshiToBitcoin(transaction.satoshis)
                         balance = balance.plus(transaction.satoshis)
                         transactionArrayTemp.push(transaction)
                     }
@@ -234,7 +244,7 @@ export class BalanceComponent implements OnInit {
                 this.transactionArray = transactionArrayTemp
             })
         }, (error: HttpErrorResponse) => {
-            M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
+            M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' })
             console.error(error)
         })
     }

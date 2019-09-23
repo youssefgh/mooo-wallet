@@ -1,8 +1,10 @@
 import { environment } from '../../environments/environment';
 import { SendService } from '../send.service';
 import { WalletGenerationService } from '../wallet-generation.service';
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, AfterContentChecked, ViewChild, ElementRef } from '@angular/core';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import * as coinSelect from 'coinselect/split';
+
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Big } from 'big.js';
 import { Transaction } from '../core/transaction';
@@ -24,29 +26,25 @@ declare var M: any;
     styleUrls: ['./send.component.css'],
     encapsulation: ViewEncapsulation.None
 })
-export class SendComponent implements OnInit {
+export class SendComponent implements OnInit, AfterContentChecked {
 
     advancedMode: boolean = true
 
-    from: string = ""
+    from: string
     selectedDestination: string
     selectedAmount: number
     changeOutput: Output
     outputArray = new Array<Output>()
     utxoArray = new Array<Transaction>()
     minimumRelayFeeInBtc: number
+    psbtBase64: string
     transactionHex: string
-    balanceBig: Big
-    balance: string
-    transactionFeeBig: Big
-    transactionFee: string
-    totalAmountToSend: string
-    remainingBalance: string
+    balance: Big
+    transactionFee: Big
+    totalAmountToSend: Big
 
     mnemonic: string
     passphrase: string
-    wif: string
-    useWif = false
 
     minSelectableFee: number
     maxSelectableFee: number
@@ -55,14 +53,16 @@ export class SendComponent implements OnInit {
     maximumEstimatedConfirmationTimeInMinute: number
     feeArray: Fee[]
 
-    transaction: bitcoinjs.Transaction
-
     environment = environment
-
-    keyMatchAddress: boolean
 
     //TODO move to settings
     gap = 20
+
+    selectedQr: string
+    qrModal
+
+    @ViewChild('qrModal', { static: true })
+    qrModalRef: ElementRef
 
     constructor(private sendService: SendService, private balanceService: BalanceService,
         private walletGenerationService: WalletGenerationService, private httpClient: HttpClient,
@@ -70,6 +70,22 @@ export class SendComponent implements OnInit {
 
     ngOnInit() {
         this.loadFeeArray()
+
+        const elem = this.qrModalRef.nativeElement
+        this.qrModal = M.Modal.init(elem, {})
+    }
+
+    ngAfterContentChecked() {
+        M.updateTextFields()
+        const elements = document.getElementsByClassName('materialize-textarea')
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i]
+            M.textareaAutoResize(element)
+        }
+    }
+
+    onSourceQrScan(text: string) {
+        this.from = text
     }
 
     loadFeeArray() {
@@ -78,7 +94,7 @@ export class SendComponent implements OnInit {
             .subscribe(feeResponse => {
                 this.feeArray = feeResponse.fees
                 this.minSelectableFee = 1
-                this.maxSelectableFee = 1000
+                this.maxSelectableFee = 500
                 let defaultFee = this.sendService.feeForEstimatedConfirmationTime(60, this.feeArray)
                 this.satoshiPerByte = defaultFee.minFee
                 if (this.satoshiPerByte > this.maxSelectableFee) {
@@ -87,31 +103,16 @@ export class SendComponent implements OnInit {
                 this.minimumEstimatedConfirmationTimeInMinute = defaultFee.minMinutes
                 this.maximumEstimatedConfirmationTimeInMinute = defaultFee.maxMinutes
             }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
+                M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' })
                 console.error(error)
             })
     }
 
     isFromValid() {
-        const prefix = this.from.substr(1, 3)
-        let address
-        if (prefix === "pub") {
-            return this.isFromValidKey(this.from)
-        } else {
-            address = this.from
-            return this.isFromValidAddress(address)
-        }
-    }
-
-    isFromValidAddress(address) {
-        return this.from !== undefined && this.from !== null &&
-            this.sendService.isValidAddress(address, this.environment.network)
-    }
-
-    isFromValidKey(key) {
-        let change = 0
+        const account = 0
+        const change = 0
         try {
-            this.walletGenerationService.derive(key, change, 0, 1, environment.network)
+            this.walletGenerationService.derive(this.from, change, account, 1, environment.network)
             return true
         } catch (e) {
             return false
@@ -119,18 +120,8 @@ export class SendComponent implements OnInit {
     }
 
     loadUTXO() {
-        const prefix = this.from.substr(1, 3)
-        let address
-        if (prefix === "pub" && this.isFromValidKey(this.from)) {
+        if (this.isFromValid()) {
             this.loadUTXOFromKey(this.from)
-        } else if (!this.isFromValidAddress(address)) {
-            M.toast({ html: 'Incorrect address !' })
-        } else {
-            let addressList = new Array<string>()
-            addressList.push(this.from.toString())
-            this.changeOutput = new Output(this.from.toString(), null)
-            //TODO enable wif
-            // this.loadUTXOFromList(addressList)
         }
     }
 
@@ -145,14 +136,13 @@ export class SendComponent implements OnInit {
                 this.minimumRelayFeeInBtc = data.minimumRelayFeeInBtc
                 this.utxoArray = data.utxoArray
                 if (this.utxoArray.length === 0) {
-                    M.toast({ html: 'This wallet doesn\'t have confirmed balance' })
+                    M.toast({ html: 'This wallet doesn\'t have confirmed balance', classes: 'red' })
                     return
                 }
                 this.updateBalance()
-                this.changeOutput.amount = this.balanceBig
             }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
-                M.toast({ html: 'Can\'t list unspent ! Error : ' + error.message })
+                M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' })
+                M.toast({ html: 'Can\'t list unspent ! Error : ' + error.message, classes: 'red' })
                 console.error(error)
             })
         })
@@ -179,7 +169,7 @@ export class SendComponent implements OnInit {
                         //     // gap = 1
                     } else {
                         let changeAddress = this.walletGenerationService.derive(key, change, lastUsedIndex + 1, lastUsedIndex + 2, environment.network)[0].address
-                        this.changeOutput = new Output(changeAddress, null)
+                        this.changeOutput = new Output(changeAddress, undefined)
                         this.loadUTXOFromList(usedDerivedList)
                         return EMPTY
                     }
@@ -206,8 +196,7 @@ export class SendComponent implements OnInit {
                 }
             }
         }, (error: HttpErrorResponse) => {
-            // M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
-            M.toast({ html: 'Error while getting the balance ! ' + error.message })
+            M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' })
             console.error(error)
         })
     }
@@ -215,116 +204,6 @@ export class SendComponent implements OnInit {
     removeUTXO(index: number) {
         this.utxoArray.splice(index, 1)
         this.updateBalance()
-    }
-
-    addDestination() {
-        let selectedAmountBig
-        try {
-            selectedAmountBig = new Big(this.selectedAmount)
-            if (selectedAmountBig.lte(0)) {
-                throw new RangeError()
-            }
-        } catch (e) {
-            M.toast({ html: 'Incorrect amount !' })
-            return
-        }
-        let outputToAdd = new Output(this.selectedDestination, selectedAmountBig)
-        let newChangeAmount = this.changeOutput.amount.minus(outputToAdd.amount)
-        if (newChangeAmount.lt(0)) {
-            M.toast({ html: 'Incorrect amount !' })
-            return
-        } else if (!newChangeAmount.eq(0)) {
-            this.changeOutput.amount = newChangeAmount
-        } else {
-            this.changeOutput.amount = new Big(0)
-        }
-        this.outputArray.push(outputToAdd)
-        this.selectedDestination = null
-        this.selectedAmount = null
-        if (this.useWif) {
-            this.transaction = this.sendService.createWifTransaction(this.outputArray, this.changeOutput, this.utxoArray,
-                this.from, this.wif, this.passphrase, environment.network)
-        } else {
-            this.transaction = this.sendService.createMnemonicTransaction(this.mnemonic, this.passphrase, this.from, this.outputArray, this.changeOutput, this.utxoArray, environment.network)
-        }
-        this.transactionHex = this.transaction.toHex()
-        this.updateTransactionFee()
-        this.updateTotalAmountToSend()
-        this.updateRemainingBalance()
-    }
-
-    removeDestination(index: number) {
-        this.changeOutput.amount = this.changeOutput.amount.plus(this.outputArray[index].amount)
-        this.outputArray.splice(index, 1)
-        if (this.useWif) {
-            this.transaction = this.sendService.createWifTransaction(this.outputArray, this.changeOutput, this.utxoArray,
-                this.from, this.wif, this.passphrase, environment.network)
-        } else {
-            this.transaction = this.sendService.createMnemonicTransaction(this.mnemonic, this.passphrase, this.from, this.outputArray, this.changeOutput, this.utxoArray, environment.network)
-        }
-        this.transactionHex = this.transaction.toHex()
-        this.updateTransactionFee()
-        this.updateTotalAmountToSend()
-        this.updateRemainingBalance()
-    }
-
-    updateBalance() {
-        this.balanceBig = this.sendService.calculateBalance(this.utxoArray)
-        this.balance = parseFloat(this.balanceBig.valueOf()).toFixed(8)
-        this.balance = this.sendService.removeTailingZeros(this.balance)
-    }
-
-    updateTransactionFee() {
-        let feeInSatoshi
-        if (this.useWif) {
-            let ecPair = this.walletGenerationService.ecPairFromWif(this.wif, this.passphrase, this.environment.network)
-            //todo check native segwit
-            if (this.walletGenerationService.isP2wpkhAddress(this.from.toString(), ecPair) ||
-                this.walletGenerationService.isP2wpkhInP2shAddress(this.from.toString(), ecPair)) {
-                let virtualSize = this.transaction.virtualSize()
-                feeInSatoshi = virtualSize * this.satoshiPerByte
-            } else {
-                let byteLength = this.transaction.byteLength()
-                feeInSatoshi = byteLength * this.satoshiPerByte
-            }
-        } else {
-            if (this.utxoArray[0].derived.purpose == 49 || this.utxoArray[0].derived.purpose == 84) {
-                let virtualSize = this.transaction.virtualSize()
-                feeInSatoshi = virtualSize * this.satoshiPerByte
-            } else {
-                let byteLength = this.transaction.byteLength()
-                feeInSatoshi = byteLength * this.satoshiPerByte
-            }
-        }
-        this.transactionFeeBig = this.conversionService.satoshiToBitcoin(feeInSatoshi)
-        this.transactionFee = parseFloat(this.transactionFeeBig.valueOf()).toFixed(8)
-        this.transactionFee = this.sendService.removeTailingZeros(this.transactionFee)
-    }
-
-    updateTotalAmountToSend() {
-        let totalAmountToSendBig = new Big(0)
-        for (let output of this.outputArray) {
-            totalAmountToSendBig = totalAmountToSendBig.plus(output.amount)
-        }
-        //TODO remove duplication
-        let totalAmountToSend = parseFloat(totalAmountToSendBig.valueOf()).toFixed(8)
-        this.totalAmountToSend = this.sendService.removeTailingZeros(totalAmountToSend)
-    }
-
-    updateRemainingBalance() {
-        let remainingBalanceBig
-        if (this.changeOutput !== null) {
-            remainingBalanceBig = this.changeOutput.amount.minus(this.transactionFeeBig)
-        } else {
-            remainingBalanceBig = new Big(0).minus(this.transactionFeeBig)
-        }
-        this.remainingBalance = parseFloat(remainingBalanceBig.valueOf()).toFixed(8)
-        this.remainingBalance = this.sendService.removeTailingZeros(this.remainingBalance)
-    }
-
-    //TODO rename
-    canSend() {
-        return this.utxoArray.length > 0
     }
 
     satoshiPerByteChanged() {
@@ -335,41 +214,156 @@ export class SendComponent implements OnInit {
                 break
             }
         }
-        this.updateTransactionFee()
-        this.updateRemainingBalance()
+        //TODO remove dup
+        let outputArray = [...this.outputArray]
+        outputArray.push(new Output(this.changeOutput.destination, undefined))
+
+        let { inputs, outputs, fee } = coinSelect(
+            this.utxoArray.map((u) => {
+                return { txId: u.id, vout: u.vout, value: u.satoshis }
+            }),
+            outputArray.map((o) => {
+                return { address: o.destination, value: o.amount }
+            })
+            , this.satoshiPerByte)
+        if (!outputs) {
+            M.toast({ html: 'Insufficient balance ! reduce the  transaction fee', classes: 'red' })
+            this.transactionFee = new Big(fee)
+        } else {
+            for (const output of outputs) {
+                if (output.address === this.changeOutput.destination) {
+                    this.changeOutput.amount = output.value
+                    break
+                }
+            }
+            this.transactionFee = new Big(fee)
+        }
+    }
+
+    onDestinationQrScan(text: string) {
+        this.selectedDestination = text
+    }
+
+    addDestination() {
+        let selectedAmount
+        try {
+            selectedAmount = this.conversionService.bitcoinToSatoshi(this.selectedAmount)
+            if (selectedAmount < 0) {
+                throw new RangeError()
+            }
+            let usableBalance = this.changeOutput.amount ? this.changeOutput.amount : this.conversionService.bigToNumber(this.balance)
+            if (selectedAmount >= usableBalance) {
+                throw new RangeError()
+            }
+        } catch (e) {
+            M.toast({ html: 'Incorrect amount !', classes: 'red' })
+            return
+        }
+
+        let outputArray = [...this.outputArray]
+        let outputToAdd = new Output(this.selectedDestination, selectedAmount)
+        outputArray.push(outputToAdd)
+        outputArray.push(new Output(this.changeOutput.destination, undefined))
+
+        let { inputs, outputs, fee } = coinSelect(
+            this.utxoArray.map((u) => {
+                return { txId: u.id, vout: u.vout, value: u.satoshis }
+            }),
+            outputArray.map((o) => {
+                return { address: o.destination, value: o.amount }
+            })
+            , this.satoshiPerByte)
+        if (!outputs) {
+            M.toast({ html: 'The amount is too big ! reduce the amount to pay transaction fee', classes: 'red' })
+            return
+        }
+
+        for (const output of outputs) {
+            if (output.address === this.changeOutput.destination) {
+                this.changeOutput.amount = output.value
+                break
+            }
+        }
+        this.transactionFee = new Big(fee)
+        this.outputArray.push(outputToAdd)
+        this.updateTotalAmountToSend()
+        this.selectedDestination = undefined
+        this.selectedAmount = undefined
+    }
+
+    removeDestination(index: number) {
+        this.outputArray.splice(index, 1)
+        let outputArray = [...this.outputArray]
+        outputArray.push(new Output(this.changeOutput.destination, undefined))
+
+        let { inputs, outputs, fee } = coinSelect(
+            this.utxoArray.map((u) => {
+                return { txId: u.id, vout: u.vout, value: u.satoshis }
+            }),
+            outputArray.map((o) => {
+                return { address: o.destination, value: o.amount }
+            })
+            , this.satoshiPerByte)
+        if (outputs) {
+            for (const output of outputs) {
+                if (output.address === this.changeOutput.destination) {
+                    this.changeOutput.amount = output.value
+                    break
+                }
+            }
+        }
+        this.transactionFee = new Big(fee)
+        this.updateTotalAmountToSend()
+    }
+
+    updateBalance() {
+        this.balance = this.sendService.calculateBalance(this.utxoArray)
+    }
+
+    updateTotalAmountToSend() {
+        let totalAmountToSend = new Big(0)
+        for (let output of this.outputArray) {
+            totalAmountToSend = totalAmountToSend.plus(output.amount)
+        }
+        this.totalAmountToSend = totalAmountToSend
+    }
+
+    //TODO rename
+    canSend() {
+        return this.utxoArray.length > 0
     }
 
     isRemainingBalanceNegative() {
-        return parseFloat(this.remainingBalance) < 0
+        return this.changeOutput.amount < 0
     }
 
-    checkKeyMatchAddress() {
-        if (this.useWif) {
-            this.keyMatchAddress = this.walletGenerationService.isWifMatchAddress(this.wif, this.passphrase, this.from.toString(), this.environment.network)
-        } else {
-            this.keyMatchAddress = this.walletGenerationService.isMnemonicMatchKey(this.mnemonic, this.passphrase, this.from.toString(), this.environment.network)
-        }
+    createPsbt() {
+        let psbt = this.sendService.createPsbt(this.outputArray, this.changeOutput, this.utxoArray, environment.network)
+        this.psbtBase64 = psbt.toBase64()
     }
 
-    send() {
-        let changeOutputMinusFees = new Output(this.changeOutput.destination, this.changeOutput.amount.minus(this.transactionFeeBig))
-        //        this.transaction = this.sendService.createTransaction(this.outputArray, changeOutputMinusFees, this.utxoArray,
-        //            this.from, this.mnemonic, this.passphrase)
-        //        console.log("send wif" + this.wif)
-        if (this.useWif) {
-            this.transaction = this.sendService.createWifTransaction(this.outputArray, changeOutputMinusFees, this.utxoArray,
-                this.from, this.wif, this.passphrase, environment.network)
-        } else {
-            this.transaction = this.sendService.createMnemonicTransaction(this.mnemonic, this.passphrase, this.from, this.outputArray, changeOutputMinusFees, this.utxoArray, environment.network)
+    showQr(qr: string) {
+        this.selectedQr = qr
+        this.qrModal.open()
+    }
+
+    signPsbt() {
+        if (!this.walletGenerationService.isMnemonicMatchKey(this.mnemonic, this.passphrase, this.from, this.environment.network)) {
+            M.toast({ html: "Signing error ! Mnemonic and/or passphrase doesn't match extended key", classes: 'red' })
+            return
         }
-        this.transactionHex = this.transaction.toHex()
-        //        console.log(this.transactionHex)
+        const psbt = bitcoinjs.Psbt.fromBase64(this.psbtBase64)
+        this.sendService.signPsbt(this.mnemonic, this.passphrase, psbt, environment.network)
+        this.transactionHex = psbt.extractTransaction().toHex()
+    }
+
+    broadcast() {
         this.sendService.broadcast(this.transactionHex, environment).subscribe(data => {
             let responseList = new Array<JsonRpcResponse>()
             for (let responseString of data) {
                 let response = JsonRpcResponse.from(responseString)
                 if (response.error) {
-                    M.toast({ html: 'Sending error ! Tx: ' + response.error.message })
+                    M.toast({ html: 'Sending error ! Tx: ' + response.error.message, classes: 'red' })
                     console.error(response.error)
                     return
                 }
@@ -377,45 +371,30 @@ export class SendComponent implements OnInit {
             }
             responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1)
             let response = responseList[1]
-            M.toast({ html: 'Sending complete ! Tx:' + response.result })
+            M.toast({ html: 'Sending complete ! Tx:' + response.result, classes: 'green' })
             this.clear()
         }, (error: HttpErrorResponse) => {
-            M.toast({ html: 'Error while connecting to the proxy server! please try again later' })
+            M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' })
             console.error(error)
         })
     }
 
-    // createMnemonicTransaction() {
-    //     return this.sendService.createMnemonicTransaction(this.mnemonic, this.passphrase, this.from, this.outputArray
-    //         , changeOutputMinusFees, this.utxoArray, environment.network)
-    // }
-
-    switchToWif() {
-        this.useWif = true
-    }
-
     clear() {
-        this.from = ""
-        this.selectedDestination = null
-        this.selectedAmount = null
-        this.changeOutput = null
+        this.from = undefined
+        this.selectedDestination = undefined
+        this.selectedAmount = undefined
+        this.changeOutput = undefined
         this.outputArray = new Array<Output>()
         this.utxoArray = new Array<Transaction>()
-        this.transactionHex = null
-        this.balanceBig = null
-        this.balance = null
+        this.psbtBase64 = undefined
+        this.transactionHex = undefined
+        this.balance = undefined
 
-        this.transactionFeeBig = null
-        this.transactionFee = null
-        this.totalAmountToSend = null
-        this.remainingBalance = null
+        this.transactionFee = undefined
+        this.totalAmountToSend = undefined
 
-        this.mnemonic = null
-        this.passphrase = null
-
-        this.transaction = null
-
-        this.keyMatchAddress = false
+        this.mnemonic = undefined
+        this.passphrase = undefined
     }
 
 }

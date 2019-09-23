@@ -1,0 +1,27 @@
+<div *ngIf="!useVideo" class="btn" (click)="decodeFromFile()">
+    <span>QR</span>
+</div>
+<div class="hide">
+    <input type="file" accept="image/*" capture="camera" (change)="onPictureChange($event)" #fileInput />
+    <div class="file-path-wrapper hide">
+        <input class="file-path validate" type="text" required>
+    </div>
+</div>
+
+<div *ngIf="useVideo" class="btn" (click)="decodeFromVideo()">
+    <span>QR</span>
+</div>
+
+<div class="modal" style="width: 80vw;" #qrModal>
+    <div *ngIf="useVideo" class="modal-content center-align">
+        <div *ngIf="!selectedMediaDeviceInfo" class="collection">
+            <a *ngFor="let deviceInfo of videoInputDevices" class="collection-item"
+                (click)="decodeFromVideoDevice(deviceInfo)">{{deviceInfo.label}}</a>
+        </div>
+        <video *ngIf="selectedMediaDeviceInfo" id="video" class="z-depth-3"
+            style="border: 1px solid gray; width: 60vw"></video>
+    </div>
+    <div *ngIf="useVideo" class="modal-footer" style="text-align: center">
+        <a class="waves-effect waves-green btn-flat" (click)="stopDecodeFromVideoDevice()">Close</a>
+    </div>
+</div>

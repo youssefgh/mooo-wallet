@@ -2,6 +2,7 @@ import { WalletGenerationService } from './wallet-generation.service';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import * as bip39 from 'bip39';
 import { Big } from 'big.js';
 import { Transaction } from './core/transaction';
 import { Call } from './core/electrum/call';
@@ -25,7 +26,7 @@ export class SendService {
     calculateBalance(utxoArray: Transaction[]) {
         let balance = new Big(0)
         for (let utxo of utxoArray) {
-            balance = balance.plus(this.conversionService.satoshiToBitcoin(utxo.satoshis))
+            balance = balance.plus(utxo.satoshis)
             balance.plus(new Big(0))
         }
         return balance
@@ -39,16 +40,6 @@ export class SendService {
         }
     }
 
-    removeTailingZeros(text: string) {
-        while (text[text.length - 1] === "0") {
-            text = text.substring(0, text.length - 1)
-        }
-        if (text[text.length - 1] === ".") {
-            text = text.substring(0, text.length - 1)
-        }
-        return text
-    }
-
     isValidAddress(addressString: string, network: bitcoinjs.Network) {
         try {
             bitcoinjs.address.toOutputScript(addressString, network)
@@ -58,41 +49,13 @@ export class SendService {
         }
     }
 
-    createMnemonicTransaction(mnemonic: string, passphrase: string, xpub: string, outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
-        utxoArray.forEach(transaction => {
-            let wif = this.walletGenerationService.indexNodeFromMnemonic(mnemonic, passphrase, xpub, transaction.derived, network).toWIF()
-            let ecPair = bitcoinjs.ECPair.fromWIF(wif, network)
-            transaction.ecPair = ecPair
-        })
-        return this.createTransaction(outputArray, changeOutput, utxoArray, network)
-    }
-
-    createWifTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], from: string, wif: string, passphrase: string, network: bitcoinjs.Network) {
-        let ecPair = this.walletGenerationService.ecPairFromWif(wif, passphrase, network)
-        utxoArray.forEach(transaction => {
-            transaction.ecPair = ecPair
-        })
-        return this.createTransaction(outputArray, changeOutput, utxoArray, network)
-    }
-
-    createTransaction(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
-        let psbt = new bitcoinjs.Psbt({ network: network })
+    createPsbt(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
+        const psbt = new bitcoinjs.Psbt({ network: network })
         for (let i = 0; i < utxoArray.length; i++) {
-            let utxo = utxoArray[i]
+            const utxo = utxoArray[i]
+            const bip32Derivation = utxo.derived.bip32Derivation()
             if (utxo.derived.purpose === 84) {
-                let transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex)
-                psbt.addInput({
-                    hash: utxo.id,
-                    index: utxo.vout,
-                    witnessUtxo: {
-                        script: transaction.outs[utxo.vout].script,
-                        value: utxo.satoshis
-                    }
-                })
-            } else if (utxo.derived.purpose === 49) {
-                const p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.ecPair.publicKey, network: network })
-                const p2sh = bitcoinjs.payments.p2sh({ redeem: p2wpkh, network: network })
-                let transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex)
+                const transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex)
                 psbt.addInput({
                     hash: utxo.id,
                     index: utxo.vout,
@@ -100,29 +63,77 @@ export class SendService {
                         script: transaction.outs[utxo.vout].script,
                         value: utxo.satoshis
                     },
-                    redeemScript: p2sh.redeem.output
+                    bip32Derivation: [
+                        bip32Derivation
+                    ]
+                })
+            } else if (utxo.derived.purpose === 49) {
+                const p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.derived.publicKey, network: network })
+                const p2sh = bitcoinjs.payments.p2sh({ redeem: p2wpkh, network: network })
+                const transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex)
+                psbt.addInput({
+                    hash: utxo.id,
+                    index: utxo.vout,
+                    witnessUtxo: {
+                        script: transaction.outs[utxo.vout].script,
+                        value: utxo.satoshis
+                    },
+                    redeemScript: p2sh.redeem.output,
+                    bip32Derivation: [
+                        bip32Derivation
+                    ]
                 })
             } else if (utxo.derived.purpose === 44) {
-                psbt.addInput({ hash: utxo.id, index: utxo.vout, nonWitnessUtxo: Buffer.from(utxo.transactionHex, 'hex') })
+                psbt.addInput({
+                    hash: utxo.id,
+                    index: utxo.vout,
+                    nonWitnessUtxo: Buffer.from(utxo.transactionHex, 'hex'),
+                    bip32Derivation: [
+                        bip32Derivation
+                    ]
+                })
             } else {
                 throw new Error("Incompatible purpose " + utxo.derived.purpose)
             }
         }
         for (let i = 0; i < outputArray.length; i++) {
             let output = outputArray[i]
-            psbt.addOutput({ address: output.destination, value: output.amountInSatochi() })
+            psbt.addOutput({ address: output.destination, value: output.amount })
         }
-        if (changeOutput !== null && !changeOutput.amount.eq(0)) {
-            psbt.addOutput({ address: changeOutput.destination, value: changeOutput.amountInSatochi() })
+        if (changeOutput.amount !== 0) {
+            psbt.addOutput({ address: changeOutput.destination, value: changeOutput.amount })
         }
-        for (let i = 0; i < utxoArray.length; i++) {
-            let utxo = utxoArray[i]
-            psbt.signInput(i, utxo.ecPair)
-            psbt.validateSignaturesOfInput(i)
+        return psbt
+    }
+
+    transactionFee(transaction: bitcoinjs.Transaction, utxoArray: Array<Transaction>, satoshiPerByte: number) {
+        let feeInSatoshi
+        if (utxoArray[0].derived.purpose == 49 || utxoArray[0].derived.purpose == 84) {
+            let virtualSize = transaction.virtualSize()
+            feeInSatoshi = virtualSize * satoshiPerByte
+        } else {
+            let byteLength = transaction.byteLength()
+            feeInSatoshi = byteLength * satoshiPerByte
+        }
+        return feeInSatoshi
+    }
+
+    signPsbtHex(mnemonic: string, passphrase: string, base64: string, network: bitcoinjs.Network) {
+        const psbt = bitcoinjs.Psbt.fromBase64(base64, { network: network })
+        return this.signPsbt(mnemonic, passphrase, psbt, network)
+    }
+
+    signPsbt(mnemonic: string, passphrase: string, psbt: bitcoinjs.Psbt, network: bitcoinjs.Network) {
+        const seed = bip39.mnemonicToSeed(mnemonic, passphrase)
+        const hdRoot = bitcoinjs.bip32.fromSeed(seed, network)
+        for (let index = 0; index < psbt.inputCount; index++) {
+            (psbt as any).data.inputs[index].bip32Derivation[0].masterFingerprint = hdRoot.fingerprint
+        }
+        psbt.signAllInputsHD(hdRoot)
+        if (!psbt.validateSignaturesOfAllInputs()) {
+            throw new Error("Invalid signature")
         }
         psbt.finalizeAllInputs()
-        let transaction = psbt.extractTransaction()
-        return transaction
     }
 
     loadUTXO(derivedList: Array<Derived>, environment) {

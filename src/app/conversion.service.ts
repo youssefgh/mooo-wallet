@@ -6,14 +6,34 @@ import { Big } from 'big.js';
 })
 export class ConversionService {
 
+    satoshiInBitcoin = 100000000
+
     constructor() { }
 
-    satoshiToBitcoin(satoshi: number): Big {
-        return new Big(satoshi).times(new Big(0.00000001))
+    satoshiToBitcoinBig(satoshi: number): Big {
+        return this.bigSatoshiToBitcoinBig(new Big(satoshi))
     }
 
-    bigSatoshiToBitcoin(satoshi: Big): Big {
-        return satoshi.times(new Big(0.00000001))
+    satoshiToBitcoin(satoshi: number): number {
+        const big = this.satoshiToBitcoinBig(satoshi)
+        return this.bigToNumber(big)
+    }
+
+    bigSatoshiToBitcoinBig(satoshi: Big): Big {
+        return satoshi.div(this.satoshiInBitcoin)
+    }
+
+    bitcoinToSatoshiBig(bitcoin: number): Big {
+        return new Big(bitcoin).times(this.satoshiInBitcoin)
+    }
+
+    bitcoinToSatoshi(bitcoin: number): number {
+        const big = this.bitcoinToSatoshiBig(bitcoin)
+        return this.bigToNumber(big)
+    }
+
+    bigToNumber(big: Big): number {
+        return parseFloat(big.valueOf())
     }
 
 }

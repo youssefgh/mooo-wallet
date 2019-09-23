@@ -79,19 +79,20 @@
             </div>
         </div>
         <div class="row">
-            <table *ngIf="derivedArray && derivedArray.length !== 0" class="highlight centered">
+            <table *ngIf="derivedArray && derivedArray.length !== 0" class="highlight centered responsive-table">
                 <thead>
                     <tr>
                         <th>Index</th>
                         <th>Address</th>
-                        <th>WIF</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let derived of derivedArray; let i = index">
                         <td>{{i}}</td>
                         <td>{{derived.address}}</td>
-                        <td>{{derived.wif}}</td>
+                        <td>
+                            <a class="waves-effect waves-light btn" (click)="showQr(derived.address)">QR</a>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -104,3 +105,12 @@
         <div #scrollTarget></div>
     </div>
 </main>
+<div class="modal" style="width: 30vw; min-width: 280px" #qrModal>
+    <div class="modal-content center-align">
+        <qr-code [value]="selectedQr" style="width: 180px"></qr-code>
+        <p style="font-size: smaller">{{selectedQr}}</p>
+    </div>
+    <div class="modal-footer" style="text-align: center">
+        <a class="modal-close waves-effect waves-green btn-flat">Close</a>
+    </div>
+</div>

@@ -19,7 +19,6 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     customDerivationPath = "m/"
     customDerivation = false
-    // derivationPath: string
     purpose: number
     coinType: number
     account = 0
@@ -39,11 +38,20 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     derivedArray: Array<Derived>
 
+    selectedQr: string
+    qrModal
+
+    @ViewChild('qrModal', { static: true })
+    qrModalRef: ElementRef
+
     constructor(private walletGenerationService: WalletGenerationService) { }
 
     ngOnInit() {
         this.coinType = this.walletGenerationService.coinType(environment.network)
         this.setBIP(49)
+
+        const elem = this.qrModalRef.nativeElement
+        this.qrModal = M.Modal.init(elem, {})
     }
 
     ngAfterContentChecked() {
@@ -65,18 +73,18 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     //TODO move to service
     derive() {
-        const node = this.walletGenerationService.nodeFrom(this.mnemonic, this.passphrase, this.purpose, environment.network)
+        const hdRoot = this.walletGenerationService.hdRootFrom(this.mnemonic, this.passphrase, this.purpose, environment.network)
         let finalNode
         if (this.customDerivation) {
             try {
-                finalNode = node.derivePath(this.customDerivationPath)
+                finalNode = hdRoot.derivePath(this.customDerivationPath)
             } catch (e) {
                 M.toast({ html: 'Incorrect derivation path !', classes: 'red' })
                 console.error(e)
                 return
             }
         } else {
-            const accountNode = node.deriveHardened(this.purpose).deriveHardened(this.coinType).deriveHardened(this.account)
+            const accountNode = hdRoot.deriveHardened(this.purpose).deriveHardened(this.coinType).deriveHardened(this.account)
             this.xpub = accountNode.neutered().toBase58()
             this.xpriv = accountNode.toBase58()
             finalNode = accountNode.derive(this.change)
@@ -88,6 +96,11 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     more() {
         this.toIndex += this.defaultTo
         this.derive()
+    }
+
+    showQr(qr: string) {
+        this.selectedQr = qr
+        this.qrModal.open()
     }
 
 }

@@ -3,20 +3,24 @@
 <main>
     <div class="container">
         <div class="row">
-            <div class="input-field col s9 m8 l8 xl6 center-align">
-                <input id="source" type="text" [(ngModel)]="from" [ngClass]="{'valid': isFromValid()}" [disabled]="canSend()"/>
-                       <label for="source">Address Or Extended Public Key</label>
+            <div class="input-field col s9 m7 center-align" [ngClass]="{'s12 m12': canSend()}">
+                <textarea id="source" class="materialize-textarea" [(ngModel)]="from"
+                    [ngClass]="{'valid': isFromValid()}" [disabled]="canSend()"></textarea>
+                <label for="source">Extended Public Key</label>
             </div>
-            <div *ngIf="!canSend()" class="col s3 m4 l4 xl6 center-align" style="margin-top: 0.5rem">
+            <div *ngIf="!canSend()" class="col s3 m1" style="margin-top: 1rem">
+                <qr-code-reader (scanned)="onSourceQrScan($event)"></qr-code-reader>
+            </div>
+            <div *ngIf="!canSend()" class="col s12 m4 center-align" style="margin-top: 0.5rem">
                 <a class="waves-effect waves-light btn-large pulse" (click)="loadUTXO()">
                     <i class="material-icons left">system_update_alt</i>
                     Load
-                    <span *ngIf="advancedMode"> UTXO</span>
+                    <!-- <span *ngIf="advancedMode"> UTXO</span> -->
                 </a>
             </div>
         </div>
-        <div *ngIf="advancedMode && canSend()" class="row">
-            <table>
+        <div *ngIf="advancedMode && canSend() && !psbtBase64" class="row">
+            <table class="responsive-table">
                 <thead>
                     <tr>
                         <th>Amount</th>
@@ -27,9 +31,10 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let transaction of utxoArray; let i = index" [attr.data-index]="i">
-                        <td>{{transaction.amount}}&nbsp;{{environment.btc}}</td>
+                        <td>{{transaction.satoshis | btc}}&nbsp;{{environment.btc}}</td>
                         <td class="center">{{transaction.confirmations}}</td>
-                        <td class="hide-on-med-and-up" style="max-width: 140px"><span class="truncate">{{transaction.id}}</span></td>
+                        <td class="hide-on-med-and-up" style="max-width: 140px"><span
+                                class="truncate">{{transaction.id}}</span></td>
                         <td class="hide-on-small-and-down">{{transaction.id}}</td>
                         <td>{{transaction.derived.address}}</td>
                         <td>
@@ -42,50 +47,53 @@
             </table>
         </div>
         <div *ngIf="canSend()" class="row center-align">
-            <h1>
-                Balance : <span class="blue lighten-4 blue-text text-lighten-2" style="border-radius: 0.3rem; padding: 0.5rem">{{balance}}&nbsp;{{environment.btc}}</span>
-            </h1>
-        </div>
-        <div *ngIf="canSend() && !keyMatchAddress" class="row">
-            <!-- <div *ngIf="!useWif" class="col s12 input-field center-align">
-                <a class="waves-effect waves-light btn" (click)="switchToWif()">Use WIF</a>
-            </div> -->
-            <div *ngIf="!useWif" class="col s12 input-field">
-                <input id="mnemonic" type="text" [(ngModel)]="mnemonic" 
-                       [ngClass]="{'valid': keyMatchAddress,'invalid': mnemonic != null && !keyMatchAddress}"
-                       (keyup)="checkKeyMatchAddress()"/>
-                       <label for="mnemonic">Mnemonic</label>
-            </div>
-            <div *ngIf="useWif" class="col s12 input-field">
-                <input id="wif" type="text" [(ngModel)]="wif" 
-                       [ngClass]="{'valid': keyMatchAddress,'invalid': wif != null && !keyMatchAddress}"
-                       (keyup)="checkKeyMatchAddress()"/>
-                       <label for="wif">Wif</label>
-            </div>
-            <div class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="passphrase" 
-                       [ngClass]="{'valid': keyMatchAddress,'invalid': mnemonic != null && !keyMatchAddress}"
-                       (keyup)="checkKeyMatchAddress()"/>
-                       <label for="passphrase">Passphrase</label>
+            <div style="font-size: xx-large;">
+                Balance : <span class="blue lighten-4 blue-text text-lighten-2"
+                    style="border-radius: 0.3rem; padding: 0.5rem">{{balance | btc}}&nbsp;{{environment.btc}}</span>
             </div>
         </div>
-        <div *ngIf="balanceBig?.gt(0) && keyMatchAddress" class="row">
-            <div class="input-field col s8 l5 xl4">
-                <input id="amount-to-send" type="number" step="0.00000001" min="0.00000001" [(ngModel)]="selectedAmount"/>
+        <div *ngIf="balance?.gt(0) && !psbtBase64" class="row">
+            <div class="col s2 range-field">
+                Fee :
+            </div>
+            <div class="col s10 range-field">
+                <input type="range" style="margin-top: 2px" [min]="minSelectableFee" [max]="maxSelectableFee"
+                    [(ngModel)]="satoshiPerByte" (change)="satoshiPerByteChanged()" />
+            </div>
+            <div class="col s12 center-align">
+                <div style="margin-bottom: 10px">
+                    <span class="blue"
+                        style="border-radius: 2px; padding: 0.3rem; color: #fff; font-size: 0.8rem; font-weight: 300;">
+                        {{satoshiPerByte}} Satoshis/Byte
+                    </span>
+                </div>
+            </div>
+            <div class="col s12">
+                Estimated confirmation time : {{minimumEstimatedConfirmationTimeInMinute}}min to
+                {{maximumEstimatedConfirmationTimeInMinute}}min
+            </div>
+        </div>
+        <div *ngIf="balance?.gt(0) && !psbtBase64" class="row">
+            <div class="input-field col s12 l5 xl4">
+                <input id="amount-to-send" type="number" step="0.00000001" min="0.00000001"
+                    [(ngModel)]="selectedAmount" />
                 <label for="amount-to-send">Amount to send in {{environment.btc}}</label>
             </div>
-            <div class="input-field col s10 l6 xl7">
-                <input id="destination" type="text" [(ngModel)]="selectedDestination"/>
+            <div class="input-field col s9 l5 xl6">
+                <textarea id="destination" class="materialize-textarea" [(ngModel)]="selectedDestination"></textarea>
                 <label for="destination">Destination</label>
             </div>
-            <div class="col s2 l1" style="margin-top: 1.4rem">
-                <a class="waves-effect waves-light btn-floating secondary-content" (click)="addDestination()">
+            <div class="col s3 l1 xl1 center-align" style="margin-top: 1rem">
+                <qr-code-reader (scanned)="onDestinationQrScan($event)"></qr-code-reader>
+            </div>
+            <div class="col s12 l1 center-align" style="margin-top: 1rem">
+                <a class="waves-effect waves-light btn-floating" (click)="addDestination()">
                     <i class="material-icons">add</i>
                 </a>
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row">
-            <table>
+        <div *ngIf="outputArray.length > 0 && !psbtBase64" class="row">
+            <table class="responsive-table">
                 <thead>
                     <tr>
                         <th>Amount</th>
@@ -94,10 +102,11 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let output of outputArray; let i = index" [attr.data-index]="i">
-                        <td>{{output.amount}}&nbsp;{{environment.btc}}</td>
+                        <td>{{output.amount | btc}}&nbsp;{{environment.btc}}</td>
                         <td>{{output.destination}}</td>
                         <td>
-                            <a class="waves-effect waves-light btn-floating secondary-content" (click)="removeDestination(i)">
+                            <a class="waves-effect waves-light btn-floating secondary-content"
+                                (click)="removeDestination(i)">
                                 <i class="material-icons">remove</i>
                             </a>
                         </td>
@@ -105,39 +114,61 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row">
-            <!--<label for="">Fees</label>-->
-            <div class="col s1 range-field">
-                Fee :
+        <div *ngIf="outputArray.length > 0" class="row">
+            <div *ngIf="outputArray.length > 0" class="row center-align">
+                <h5>Total amount to Send: {{totalAmountToSend | btc}}&nbsp;{{environment.btc}}</h5>
             </div>
-            <div class="col s3 range-field">
-                <input type="range" [min]="minSelectableFee" [max]="maxSelectableFee" [(ngModel)]="satoshiPerByte" (change)="satoshiPerByteChanged()" />
+            <div *ngIf="outputArray.length > 0" class="row center-align">
+                <h5>Transaction Fee: {{transactionFee | btc}}&nbsp;{{environment.btc}}</h5>
             </div>
-            <div class="col s2">
-                <span class="new badge blue" data-badge-caption="Satoshis/Byte">{{satoshiPerByte}}</span>
-            </div>
-            <div class="col s6">
-                Estimated confirmation time : {{minimumEstimatedConfirmationTimeInMinute}}min to {{maximumEstimatedConfirmationTimeInMinute}}min
+            <div *ngIf="outputArray.length > 0" class="row center-align">
+                <h5 [ngClass]="{'red-text': isRemainingBalanceNegative()}">Change:
+                    {{changeOutput.amount | btc}}&nbsp;{{environment.btc}}</h5>
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row center-align">
-            <h5>Total amount to Send: {{totalAmountToSend}}&nbsp;{{environment.btc}}</h5>
-        </div>
-        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row center-align">
-            <h5>Transaction Fee: {{transactionFee}}&nbsp;{{environment.btc}}</h5>
-        </div>
-        <div *ngIf="outputArray.length > 0 && keyMatchAddress" class="row center-align">
-            <h5 [ngClass]="{'red-text': isRemainingBalanceNegative()}">Balance remaining: {{remainingBalance}}&nbsp;{{environment.btc}}</h5>
-        </div>
-        <div *ngIf="outputArray.length > 0 && transactionHex != null && !isRemainingBalanceNegative()" class="row">
+        <div *ngIf="outputArray.length > 0 && !isRemainingBalanceNegative() && !psbtBase64" class="row">
             <div class="center-align">
-                <a class="waves-effect waves-light btn" (click)="send()">Send</a>
+                <a class="waves-effect waves-light btn" (click)="createPsbt()">Create transaction</a>
             </div>
         </div>
-        <div *ngIf="advancedMode && transactionHex != null" class="row">
-            <div>
-                <label for="transactionHex">Transaction</label>
-                <textarea id="transactionHex" class="materialize-textarea" readonly>{{transactionHex}}</textarea>
+        <div *ngIf="psbtBase64" class="row valign-wrapper">
+            <div class="col s9">
+                <label>Partially signed transaction</label>
+                <div style="word-wrap: break-word">
+                    {{psbtBase64}}
+                </div>
+            </div>
+            <div class="col s3">
+                <a class="waves-effect waves-light btn" (click)="showQr(psbtBase64)">QR</a>
+            </div>
+        </div>
+        <div *ngIf="psbtBase64 && !transactionHex" class="row">
+            <div class="col s12 input-field">
+                <input id="mnemonic" type="text" [(ngModel)]="mnemonic" />
+                <label for="mnemonic">Mnemonic</label>
+            </div>
+            <div class="col s12 input-field">
+                <input id="passphrase" type="text" [(ngModel)]="passphrase" />
+                <label for="passphrase">Passphrase</label>
+            </div>
+            <div class="center-align">
+                <a class="waves-effect waves-light btn" (click)="signPsbt()">Sign</a>
+            </div>
+        </div>
+        <div *ngIf="transactionHex" class="row valign-wrapper">
+            <div class="col s9">
+                <label>Transaction</label>
+                <div style="word-wrap: break-word">
+                    {{transactionHex}}
+                </div>
+            </div>
+            <div class="col s3">
+                <a class="waves-effect waves-light btn" (click)="showQr(psbtBase64)">QR</a>
+            </div>
+        </div>
+        <div *ngIf="transactionHex" class="row">
+            <div class="center-align">
+                <a class="waves-effect waves-light btn" (click)="broadcast()">Broadcast</a>
             </div>
         </div>
         <div *ngIf="utxoArray.length > 0" class="row center-align">
@@ -147,6 +178,14 @@
         </div>
     </div>
 </main>
+<div class="modal" style="width: 30vw; min-width: 300px" #qrModal>
+    <div class="modal-content center-align">
+        <qr-code [value]="selectedQr" style="width: 100%"></qr-code>
+    </div>
+    <div class="modal-footer" style="text-align: center">
+        <a class="modal-close waves-effect waves-green btn-flat">Close</a>
+    </div>
+</div>
 <!--<div class="switch">
     <label>
       Off

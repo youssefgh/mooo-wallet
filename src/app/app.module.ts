@@ -15,6 +15,9 @@ import { ExtendedKeyDerivationComponent } from './extended-key-derivation/extend
 import { AppRoutingModule } from './app-routing.module';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
+import { BtcPipe } from './btc.pipe';
+import { QrCodeComponent } from './qr-code/qr-code.component';
+import { QrCodeReaderComponent } from './qr-code-reader/qr-code-reader.component';
 
 @NgModule({
     declarations: [
@@ -26,7 +29,10 @@ import { environment } from '../environments/environment';
         SendComponent,
         AboutComponent,
         MnemonicDerivationComponent,
-        ExtendedKeyDerivationComponent
+        ExtendedKeyDerivationComponent,
+        BtcPipe,
+        QrCodeComponent,
+        QrCodeReaderComponent
     ],
     imports: [
         BrowserModule,
