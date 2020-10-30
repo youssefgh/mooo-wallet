@@ -7,7 +7,7 @@ import { Mnemonic } from './mnemonic';
 export class HdRoot {
 
     static from(mnemonic: Mnemonic, purpose: number, network: bitcoinjs.Network) {
-        const seed = bip39.mnemonicToSeed(mnemonic.phrase, mnemonic.passphrase);
+        const seed = bip39.mnemonicToSeedSync(mnemonic.phrase, mnemonic.passphrase);
         const bip32Network = Bip32Network.from(purpose, network);
         return bip32.fromSeed(seed, { wif: network.wif, bip32: bip32Network });
     }

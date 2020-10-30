@@ -86,7 +86,7 @@ export class Psbt {
     }
 
     sign(mnemonic: Mnemonic) {
-        const seed = bip39.mnemonicToSeed(mnemonic.phrase, mnemonic.passphrase);
+        const seed = bip39.mnemonicToSeedSync(mnemonic.phrase, mnemonic.passphrase);
         const hdRoot = bitcoinjs.bip32.fromSeed(seed, this.network);
         for (let index = 0; index < this.object.inputCount; index++) {
             (this.object as any).data.inputs[index].bip32Derivation[0].masterFingerprint = hdRoot.fingerprint;

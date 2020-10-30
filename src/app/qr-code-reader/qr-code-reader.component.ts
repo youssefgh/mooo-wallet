@@ -35,9 +35,7 @@ export class QrCodeReaderComponent implements OnInit {
     constructor() { }
 
     ngOnInit() {
-        this.codeReader = new BrowserQRCodeReader();
-        this.codeReader
-            .listVideoInputDevices()
+        BrowserQRCodeReader.listVideoInputDevices()
             .then(videoInputDevices => {
                 if (videoInputDevices.length > 0) {
                     this.useVideo = true;
@@ -53,7 +51,6 @@ export class QrCodeReaderComponent implements OnInit {
         this.qrModal = M.Modal.init(elem, {
             onCloseEnd: () => {
                 this.selectedMediaDeviceInfo = null;
-                this.codeReader.reset();
             }
         });
     }
