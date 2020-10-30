@@ -1,4 +1,4 @@
-<navigation-bar header="Create Wallet"></navigation-bar>
+<app-navigation-bar header="Create Wallet"></app-navigation-bar>
 
 <main>
     <div class="container">
@@ -10,16 +10,16 @@
                 </label>
             </div>
             <div *ngIf="!wallet" class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="passphrase">
+                <input id="passphrase" type="text" [(ngModel)]="wallet.mnemonic.passphrase">
                 <label for="passphrase">Passphrase (optional)</label>
             </div>
         </div>
         <div class="row">
             <div class="center-align">
-                <a *ngIf="!useNativeSegwit && (!usePassphrase || passphrase) && !wallet"
+                <a *ngIf="!useNativeSegwit && (!usePassphrase || wallet.mnemonic.passphrase) && !wallet"
                     class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
                     (click)="newSegwitP2wpkhInP2sh()">Generate</a>
-                <a *ngIf="useNativeSegwit && (!usePassphrase || passphrase) && !wallet"
+                <a *ngIf="useNativeSegwit && (!usePassphrase || wallet.mnemonic.passphrase) && !wallet"
                     class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
                     (click)="newP2wpkh()">Generate</a>
             </div>
@@ -41,13 +41,13 @@
         </div>
         <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="mnemonic" value="{{wallet.mnemonic}}" readonly />
+                <input id="mnemonic" value="{{wallet.mnemonic.phrase}}" readonly />
                 <label for="mnemonic" class="active">Mnemonic</label>
             </div>
         </div>
-        <div *ngIf="wallet && passphrase" class="row">
+        <div *ngIf="wallet && wallet.mnemonic.passphrase" class="row">
             <div class="input-field">
-                <input id="passphrase" value="{{passphrase}}" readonly />
+                <input id="passphrase" value="{{wallet.mnemonic.passphrase}}" readonly />
                 <label for="passphrase" class="active">Passphrase</label>
             </div>
         </div>

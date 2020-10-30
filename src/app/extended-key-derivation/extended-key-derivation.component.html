@@ -1,4 +1,4 @@
-<navigation-bar header="Extended Key Derivation"></navigation-bar>
+<app-navigation-bar header="Extended Key Derivation"></app-navigation-bar>
 
 <main>
     <div class="container">
@@ -8,7 +8,7 @@
                 <label for="key">Extended Key</label>
             </div>
             <div class="col s2 xl1 file-field input-field">
-                <qr-code-reader (scanned)="onQrScan($event)"></qr-code-reader>
+                <app-qr-code-reader (scanned)="onQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
         <div class="row">
@@ -52,7 +52,7 @@
 </main>
 <div class="modal" style="width: 30vw; min-width: 280px" #qrModal>
     <div class="modal-content center-align">
-        <qr-code [value]="selectedQr" style="width: 180px"></qr-code>
+        <app-qr-code [value]="selectedQr" style="width: 180px"></app-qr-code>
         <p style="font-size: smaller">{{selectedQr}}</p>
     </div>
     <div class="modal-footer" style="text-align: center">

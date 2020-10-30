@@ -1,101 +1,101 @@
-import { Component, OnInit, EventEmitter, Output, ElementRef, ViewChild } from '@angular/core';
-import { BrowserQRCodeReader } from '@zxing/library';
+import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { BrowserQRCodeReader } from '@zxing/browser';
 
 declare var M: any;
 
 @Component({
-    selector: 'qr-code-reader',
+    selector: 'app-qr-code-reader',
     templateUrl: './qr-code-reader.component.html',
     styleUrls: ['./qr-code-reader.component.css']
 })
 export class QrCodeReaderComponent implements OnInit {
 
     @Output()
-    scanned = new EventEmitter<string>()
+    scanned = new EventEmitter<string>();
 
     @Output()
-    error = new EventEmitter<string>()
+    error = new EventEmitter<string>();
 
-    codeReader: BrowserQRCodeReader
+    codeReader: BrowserQRCodeReader;
 
-    videoInputDevices: MediaDeviceInfo[]
+    videoInputDevices: MediaDeviceInfo[];
 
-    selectedMediaDeviceInfo: MediaDeviceInfo
+    selectedMediaDeviceInfo: MediaDeviceInfo;
 
-    useVideo: boolean
+    useVideo: boolean;
 
     @ViewChild('qrModal', { static: true })
-    qrModalRef: ElementRef
+    qrModalRef: ElementRef;
 
-    qrModal
+    qrModal;
 
     @ViewChild('fileInput', { static: true })
-    fileInputRef: ElementRef
+    fileInputRef: ElementRef;
 
     constructor() { }
 
     ngOnInit() {
-        this.codeReader = new BrowserQRCodeReader()
+        this.codeReader = new BrowserQRCodeReader();
         this.codeReader
             .listVideoInputDevices()
             .then(videoInputDevices => {
                 if (videoInputDevices.length > 0) {
-                    this.useVideo = true
-                    this.videoInputDevices = videoInputDevices
+                    this.useVideo = true;
+                    this.videoInputDevices = videoInputDevices;
                 }
             })
             .catch(err => {
-                console.log(err)
-                this.useVideo = false
-            })
+                console.log(err);
+                this.useVideo = false;
+            });
 
-        const elem = this.qrModalRef.nativeElement
+        const elem = this.qrModalRef.nativeElement;
         this.qrModal = M.Modal.init(elem, {
             onCloseEnd: () => {
-                this.selectedMediaDeviceInfo = null
-                this.codeReader.reset()
+                this.selectedMediaDeviceInfo = null;
+                this.codeReader.reset();
             }
-        })
+        });
     }
 
     decodeFromFile() {
-        this.fileInputRef.nativeElement.click()
+        this.fileInputRef.nativeElement.click();
     }
 
     onPictureChange(event) {
-        let fileList: FileList = event.target.files
+        const fileList: FileList = event.target.files;
         if (fileList && fileList.length > 0) {
-            let file = fileList[0]
-            let imgSrc = URL.createObjectURL(file)
-            this.codeReader.decodeFromImage(undefined, imgSrc).then(result => {
-                this.scanned.emit(result.getText())
+            const file = fileList[0];
+            const imgSrc = URL.createObjectURL(file);
+            this.codeReader.decodeFromImageUrl(imgSrc).then(result => {
+                this.scanned.emit(result.getText());
             }).catch(err => {
-                console.error(err)
-                this.error.emit(err)
-            })
+                console.error(err);
+                this.error.emit(err);
+            });
         }
     }
 
     decodeFromVideo() {
-        this.qrModal.open()
+        this.qrModal.open();
     }
 
     decodeFromVideoDevice(deviceInfo: MediaDeviceInfo) {
-        this.selectedMediaDeviceInfo = deviceInfo
+        this.selectedMediaDeviceInfo = deviceInfo;
         this.codeReader
-            .decodeFromInputVideoDevice(deviceInfo.deviceId, 'video')
+            .decodeOnceFromVideoDevice(deviceInfo.deviceId, 'video')
             .then(result => {
-                this.scanned.emit(result.getText())
-                this.stopDecodeFromVideoDevice()
+                this.scanned.emit(result.getText());
+                this.stopDecodeFromVideoDevice();
             }).catch(err => {
-                console.error(err)
-                this.error.emit(err)
-            })
+                console.error(err);
+                this.error.emit(err);
+            });
     }
 
     stopDecodeFromVideoDevice() {
-        this.selectedMediaDeviceInfo = null
-        this.qrModal.close()
+        this.selectedMediaDeviceInfo = null;
+        this.qrModal.close();
     }
 
 }

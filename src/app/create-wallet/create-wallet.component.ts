@@ -1,7 +1,9 @@
-import {environment} from '../../environments/environment';
-import {Component, OnInit} from '@angular/core';
-import {WalletGenerationService} from '../wallet-generation.service';
-import {Wallet} from '../core/wallet';
+import { Component, OnInit } from '@angular/core';
+import { environment } from '../../environments/environment';
+import { HdWallet } from '../core/bitcoinjs/hdWallet';
+import { Mnemonic } from '../core/bitcoinjs/mnemonic';
+import { P2wpkhInP2shWallet } from '../core/bitcoinjs/p2wpkhInP2shWallet';
+import { P2wpkhWallet } from '../core/bitcoinjs/p2wpkhWallet';
 
 declare var M: any;
 
@@ -12,38 +14,38 @@ declare var M: any;
 })
 export class CreateWalletComponent implements OnInit {
 
-    environment = environment
+    environment = environment;
 
-    wallet: Wallet
-    passphrase: string
-    encryptedKey: string
+    wallet: HdWallet;
+    encryptedKey: string;
 
-    usePassphrase: boolean
-    useNativeSegwit: boolean
+    usePassphrase: boolean;
+    useNativeSegwit: boolean;
 
-    constructor(private walletGenerationService: WalletGenerationService) {}
+    constructor() { }
 
     ngOnInit() {
-        //TODO enable after MaterializeCSS bug fix
+        // TODO enable after MaterializeCSS bug fix
         //        let elem = document.querySelector('.tooltipped')
         //        new M.Tooltip(elem, {})
-        //let instance = M.Tooltip.init(elem, {})
+        // let instance = M.Tooltip.init(elem, {})
     }
 
     newSegwitP2wpkhInP2sh() {
-        this.wallet = this.walletGenerationService.newP2wpkhInP2sh(this.passphrase, this.environment.network)
+        const mnemonic = Mnemonic.new();
+        this.wallet = P2wpkhInP2shWallet.account0(mnemonic, this.environment.network);
     }
 
     newP2wpkh() {
-        this.wallet = this.walletGenerationService.newP2wpkh(this.passphrase, this.environment.network)
+        const mnemonic = Mnemonic.new();
+        this.wallet = P2wpkhWallet.account0(mnemonic, this.environment.network);
     }
 
     clean() {
-        this.wallet = null
-        this.passphrase = null
-        this.encryptedKey = null
-        this.usePassphrase = null
-        this.useNativeSegwit = null
+        this.wallet = null;
+        this.encryptedKey = null;
+        this.usePassphrase = null;
+        this.useNativeSegwit = null;
     }
 
 }

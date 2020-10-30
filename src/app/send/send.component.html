@@ -1,4 +1,4 @@
-<navigation-bar header="Send"></navigation-bar>
+<app-navigation-bar header="Send"></app-navigation-bar>
 
 <main>
     <div class="container">
@@ -9,7 +9,7 @@
                 <label for="source">Extended Public Key</label>
             </div>
             <div *ngIf="!canSend()" class="col s3 m1" style="margin-top: 1rem">
-                <qr-code-reader (scanned)="onSourceQrScan($event)"></qr-code-reader>
+                <app-qr-code-reader (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
             </div>
             <div *ngIf="!canSend()" class="col s12 m4 center-align" style="margin-top: 0.5rem">
                 <a class="waves-effect waves-light btn-large pulse" (click)="loadUTXO()">
@@ -19,7 +19,7 @@
                 </a>
             </div>
         </div>
-        <div *ngIf="advancedMode && canSend() && !psbtBase64" class="row">
+        <div *ngIf="advancedMode && canSend() && !psbt" class="row">
             <table class="responsive-table">
                 <thead>
                     <tr>
@@ -52,7 +52,7 @@
                     style="border-radius: 0.3rem; padding: 0.5rem">{{balance | btc}}&nbsp;{{environment.btc}}</span>
             </div>
         </div>
-        <div *ngIf="balance?.gt(0) && !psbtBase64" class="row">
+        <div *ngIf="balance?.gt(0) && !psbt" class="row">
             <div class="col s2 range-field">
                 Fee :
             </div>
@@ -73,7 +73,7 @@
                 {{maximumEstimatedConfirmationTimeInMinute}}min
             </div>
         </div>
-        <div *ngIf="balance?.gt(0) && !psbtBase64" class="row">
+        <div *ngIf="balance?.gt(0) && !psbt" class="row">
             <div class="input-field col s12 l5 xl4">
                 <input id="amount-to-send" type="number" step="0.00000001" min="0.00000001"
                     [(ngModel)]="selectedAmount" />
@@ -84,7 +84,7 @@
                 <label for="destination">Destination</label>
             </div>
             <div class="col s3 l1 xl1 center-align" style="margin-top: 1rem">
-                <qr-code-reader (scanned)="onDestinationQrScan($event)"></qr-code-reader>
+                <app-qr-code-reader (scanned)="onDestinationQrScan($event)"></app-qr-code-reader>
             </div>
             <div class="col s12 l1 center-align" style="margin-top: 1rem">
                 <a class="waves-effect waves-light btn-floating" (click)="addDestination()">
@@ -92,7 +92,7 @@
                 </a>
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && !psbtBase64" class="row">
+        <div *ngIf="outputArray.length > 0 && !psbt" class="row">
             <table class="responsive-table">
                 <thead>
                     <tr>
@@ -126,47 +126,47 @@
                     {{changeOutput.amount | btc}}&nbsp;{{environment.btc}}</h5>
             </div>
         </div>
-        <div *ngIf="outputArray.length > 0 && !isRemainingBalanceNegative() && !psbtBase64" class="row">
+        <div *ngIf="outputArray.length > 0 && !isRemainingBalanceNegative() && !psbt" class="row">
             <div class="center-align">
                 <a class="waves-effect waves-light btn" (click)="createPsbt()">Create transaction</a>
             </div>
         </div>
-        <div *ngIf="psbtBase64" class="row valign-wrapper">
+        <div *ngIf="psbt" class="row valign-wrapper">
             <div class="col s9">
                 <label>Partially signed transaction</label>
                 <div style="word-wrap: break-word">
-                    {{psbtBase64}}
+                    {{psbt.base64}}
                 </div>
             </div>
             <div class="col s3">
-                <a class="waves-effect waves-light btn" (click)="showQr(psbtBase64)">QR</a>
+                <a class="waves-effect waves-light btn" (click)="showQr(psbt.base64)">QR</a>
             </div>
         </div>
-        <div *ngIf="psbtBase64 && !transactionHex" class="row">
+        <div *ngIf="psbt && !psbt.signedTransaction" class="row">
             <div class="col s12 input-field">
-                <input id="mnemonic" type="text" [(ngModel)]="mnemonic" />
+                <input id="mnemonic" type="text" [(ngModel)]="mnemonic.phrase" />
                 <label for="mnemonic">Mnemonic</label>
             </div>
             <div class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="passphrase" />
+                <input id="passphrase" type="text" [(ngModel)]="mnemonic.passphrase" />
                 <label for="passphrase">Passphrase</label>
             </div>
             <div class="center-align">
                 <a class="waves-effect waves-light btn" (click)="signPsbt()">Sign</a>
             </div>
         </div>
-        <div *ngIf="transactionHex" class="row valign-wrapper">
+        <div *ngIf="psbt?.signedTransaction" class="row valign-wrapper">
             <div class="col s9">
                 <label>Transaction</label>
                 <div style="word-wrap: break-word">
-                    {{transactionHex}}
+                    {{psbt.signedTransaction}}
                 </div>
             </div>
             <div class="col s3">
-                <a class="waves-effect waves-light btn" (click)="showQr(psbtBase64)">QR</a>
+                <a class="waves-effect waves-light btn" (click)="showQr(psbt.base64)">QR</a>
             </div>
         </div>
-        <div *ngIf="transactionHex" class="row">
+        <div *ngIf="psbt?.signedTransaction" class="row">
             <div class="center-align">
                 <a class="waves-effect waves-light btn" (click)="broadcast()">Broadcast</a>
             </div>
@@ -180,7 +180,7 @@
 </main>
 <div class="modal" style="width: 30vw; min-width: 300px" #qrModal>
     <div class="modal-content center-align">
-        <qr-code [value]="selectedQr" style="width: 100%"></qr-code>
+        <app-qr-code [value]="selectedQr" style="width: 100%"></app-qr-code>
     </div>
     <div class="modal-footer" style="text-align: center">
         <a class="modal-close waves-effect waves-green btn-flat">Close</a>
