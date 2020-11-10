@@ -14,19 +14,19 @@ export class Address {
         }
     }
 
+    static fromOutputScript(outputScript, network: Network) {
+        return bitcoinjs.address.fromOutputScript(outputScript, network.value);
+    }
+
     constructor(value: string) {
         this.value = value;
     }
 
     scriptHash(network: Network) {
         const outputScript = bitcoinjs.address.toOutputScript(this.value, network.value);
-        const reversedScriptHash = new Buffer(bitcoinjs.crypto.sha256(outputScript).reverse());
+        const reversedScriptHash = Buffer.from(bitcoinjs.crypto.sha256(outputScript).reverse());
         return reversedScriptHash.toString('hex');
     }
-
-    // fromOutputScript(network: Network) {
-    // bitcoinjs.address.fromOutputScript(out.script, network);
-    // }
 
     toString() {
         return this.value;

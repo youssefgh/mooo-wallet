@@ -10,7 +10,7 @@ import { Derived } from '../core/derived';
 import { Call } from '../core/electrum/call';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
 import { Procedure } from '../core/electrum/procedure';
-import { Transaction } from '../core/transaction';
+import { WsTransaction } from '../core/electrum/wsTransaction';
 
 @Injectable({
     providedIn: 'root'
@@ -20,7 +20,7 @@ export class SendService {
     constructor(private httpClient: HttpClient,
         private conversionService: ConversionService) { }
 
-    calculateBalance(utxoArray: Transaction[]) {
+    calculateBalance(utxoArray: WsTransaction[]) {
         let balance = new Big(0);
         for (const utxo of utxoArray) {
             balance = balance.plus(utxo.satoshis);
@@ -79,11 +79,11 @@ export class SendService {
             responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
             const lastBlockHeight: number = responseList[1].result.height;
             const minimumRelayFeeInBtc = responseList[2].result;
-            let utxoArray = new Array<Transaction>();
+            let utxoArray = new Array<WsTransaction>();
             for (let index = 3; index < responseList.length; index++) {
                 const utxoList = responseList[index].result;
                 for (const item of utxoList) {
-                    const utxo = new Transaction();
+                    const utxo = new WsTransaction();
                     utxo.id = item.tx_hash;
                     utxo.vout = item.tx_pos;
                     utxo.satoshis = item.value;
@@ -98,13 +98,13 @@ export class SendService {
                     }
                     utxoArray.push(utxo);
                 }
-                utxoArray = utxoArray.filter((utxo: Transaction) => utxo.confirmations > 0);
+                utxoArray = utxoArray.filter((utxo: WsTransaction) => utxo.confirmations > 0);
             }
             return { 'minimumRelayFeeInBtc': minimumRelayFeeInBtc, 'utxoArray': utxoArray };
         })));
     }
 
-    rawTransactionListFrom(utxoArray: Array<Transaction>, electrumServer: string, electrumPort: number, electrumProtocol: string,
+    rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumServer: string, electrumPort: number, electrumProtocol: string,
         proxyAddress: string) {
         const call = new Call(electrumServer, electrumPort);
         let procedure = new Procedure(1, 'server.version');

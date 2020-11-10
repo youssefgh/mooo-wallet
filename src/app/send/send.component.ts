@@ -15,8 +15,8 @@ import { Network } from '../core/bitcoinjs/network';
 import { Psbt } from '../core/bitcoinjs/psbt';
 import { Derived } from '../core/derived';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
+import { WsTransaction } from '../core/electrum/wsTransaction';
 import { Output } from '../core/output';
-import { Transaction } from '../core/transaction';
 import { SendService } from './send.service';
 
 declare var M: any;
@@ -36,7 +36,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     selectedAmount: number;
     changeOutput: Output;
     outputArray = new Array<Output>();
-    utxoArray = new Array<Transaction>();
+    utxoArray = new Array<WsTransaction>();
     minimumRelayFeeInBtc: number;
     psbt: Psbt;
     // transactionHex: string;
@@ -389,7 +389,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         this.selectedAmount = undefined;
         this.changeOutput = undefined;
         this.outputArray = new Array<Output>();
-        this.utxoArray = new Array<Transaction>();
+        this.utxoArray = new Array<WsTransaction>();
         this.psbt = undefined;
         this.balance = undefined;
 

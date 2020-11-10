@@ -1,7 +1,7 @@
 import * as bip39 from 'bip39';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import { WsTransaction } from '../electrum/wsTransaction';
 import { Output } from '../output';
-import { Transaction } from '../transaction';
 import { Mnemonic } from './mnemonic';
 
 export class Psbt {
@@ -25,7 +25,7 @@ export class Psbt {
     // }
 
 
-    static from(outputArray: Output[], changeOutput: Output, utxoArray: Transaction[], network: bitcoinjs.Network) {
+    static from(outputArray: Output[], changeOutput: Output, utxoArray: WsTransaction[], network: bitcoinjs.Network) {
         const instance = new Psbt;
         const psbt = new bitcoinjs.Psbt({ network: network });
         for (let i = 0; i < utxoArray.length; i++) {

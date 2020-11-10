@@ -1,15 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import * as bitcoinjs from 'bitcoinjs-lib';
 import { throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Address } from '../core/bitcoinjs/address';
 import { Network } from '../core/bitcoinjs/network';
+import { Transaction } from '../core/bitcoinjs/transaction';
 import { Derived } from '../core/derived';
 import { Call } from '../core/electrum/call';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
 import { Procedure } from '../core/electrum/procedure';
-import { Transaction } from '../core/transaction';
+import { WsTransaction } from '../core/electrum/wsTransaction';
 
 @Injectable({
     providedIn: 'root'
@@ -71,12 +71,12 @@ export class BalanceService {
             }
             responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
             const lastBlockHeight: number = responseList[1].result.height;
-            const transactionArrayArray = new Array<Array<Transaction>>();
+            const transactionArrayArray = new Array<Array<WsTransaction>>();
             for (let index = 2; index < responseList.length; index++) {
                 const response = responseList[index];
-                const transactionArray = new Array<Transaction>();
+                const transactionArray = new Array<WsTransaction>();
                 for (const item of response.result.reverse()) {
-                    const transaction = new Transaction;
+                    const transaction = new WsTransaction;
                     transaction.inCount = 0;
                     transaction.id = item.tx_hash;
                     transaction.satoshis = 0;
@@ -110,7 +110,7 @@ export class BalanceService {
         return this.httpClient.post<any[]>(proxyAddress + '/api/proxy', call);
     }
 
-    transactionOf(derivedList: Array<Derived>, transactionArrayArray: Array<Array<Transaction>>,
+    transactionOf(derivedList: Array<Derived>, transactionArrayArray: Array<Array<WsTransaction>>,
         electrumServer: string, electrumPort: number, electrumProtocol: string,
         proxyAddress: string, network: Network) {
         return this.rawTransactionOf(this.transactionIdListOf(transactionArrayArray),
@@ -121,11 +121,11 @@ export class BalanceService {
                     const address = derivedList[h].address;
                     for (let i = 0; i < transactionArray.length; i++) {
                         const transaction = transactionArray[i];
-                        const transactionFromRaw = bitcoinjs.Transaction.fromHex(data[h + 1].result);
-                        for (let j = 0; j < transactionFromRaw.outs.length; j++) {
-                            const out = transactionFromRaw.outs[j] as any; // bitcoinjs.Output
+                        const transactionFromRaw = Transaction.fromHex(data[h + 1].result);
+                        for (let j = 0; j < transactionFromRaw.object.outs.length; j++) {
+                            const out = transactionFromRaw.object.outs[j] as any; // bitcoinjs.Output
                             try {
-                                const outputAddress = bitcoinjs.address.fromOutputScript(out.script, network.value);
+                                const outputAddress = Address.fromOutputScript(out.script, network);
                                 if (outputAddress === address.value) {
                                     transaction.satoshis += out.value;
                                 }
@@ -134,7 +134,7 @@ export class BalanceService {
                                 console.info('Unsupported output script :' + out.script);
                             }
                         }
-                        for (let j = 0; j < transactionFromRaw.ins.length; j++) {
+                        for (let j = 0; j < transactionFromRaw.object.ins.length; j++) {
                             transactionArray[i].inCount++;
                         }
                     }
@@ -143,7 +143,7 @@ export class BalanceService {
             }));
     }
 
-    transactionIdListOf(transactionListList: Transaction[][]) {
+    transactionIdListOf(transactionListList: WsTransaction[][]) {
         const transactionIdList = new Array<string>();
         for (const transactionList of transactionListList) {
             for (const transaction of transactionList) {

@@ -10,7 +10,7 @@ import { Address } from '../core/bitcoinjs/address';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Network } from '../core/bitcoinjs/network';
 import { Derived } from '../core/derived';
-import { Transaction } from '../core/transaction';
+import { WsTransaction } from '../core/electrum/wsTransaction';
 import { BalanceService } from './balance.service';
 
 declare var M: any;
@@ -29,7 +29,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     unconfirmedBalance: string;
     private bigConfirmedBalance: Big;
     private bigUnconfirmedBalance: Big;
-    transactionArray: Transaction[];
+    transactionArray: WsTransaction[];
 
     constructor(private balanceService: BalanceService,
         private conversionService: ConversionService,
@@ -243,7 +243,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
                     subscribe(transactionArrayArrayResult => {
                         let balance = new Big(0);
                         // TODO refactor
-                        let transactionArrayTemp = new Array<Transaction>();
+                        let transactionArrayTemp = new Array<WsTransaction>();
                         for (const transactionArray of transactionArrayArrayResult) {
                             for (const transaction of transactionArray) {
                                 transaction.amount = this.conversionService.satoshiToBitcoin(transaction.satoshis);
