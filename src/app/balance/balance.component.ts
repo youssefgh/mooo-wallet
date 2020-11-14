@@ -82,8 +82,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
             derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
             let lastUsedIndex = -1;
             const usedAddressList = new Array;
-            this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer,
-                environment.electrumPort, environment.electrumProtocol,
+            this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                 environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
                     if (!repeat) {
                         if (toIndex - lastUsedIndex >= gap) {
@@ -106,8 +105,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
                         toIndex = lastUsedIndex + gap;
                     }
                     derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
-                    return this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer,
-                        environment.electrumPort, environment.electrumProtocol,
+                    return this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                         environment.proxyAddress, Network.from(environment.network));
                 })).subscribe(transactionArrayArray => {
                     repeat = false;
@@ -132,14 +130,14 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         if (address == null || !Address.isValid(address, environment.network)) {
             M.toast({ html: 'Incorrect address !', classes: 'red' });
         } else {
-            const addressList = new Array;
-            addressList.push(address);
+            const addressList = new Array<Address>();
+            addressList.push(new Address(address));
             this.loadBalanceFromList(addressList);
         }
     }
 
     loadBalanceFromList(addressList: Array<Address>) {
-        this.balanceService.loadBalanceFrom(addressList, environment.electrumServer, environment.electrumPort, environment.electrumProtocol,
+        this.balanceService.loadBalanceFrom(addressList, environment.electrumProtocol,
             environment.proxyAddress, Network.from(environment.network)).subscribe((responseList) => {
                 if (responseList instanceof Observable) {
                     return;
@@ -185,8 +183,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
             let derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
             let lastUsedIndex = -1;
             const usedDerivedList = new Array<Derived>();
-            this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer,
-                environment.electrumPort, environment.electrumProtocol,
+            this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                 environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
                     if (!repeat) {
                         if (toIndex - lastUsedIndex >= gap) {
@@ -208,8 +205,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
                         toIndex = lastUsedIndex + gap;
                     }
                     derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
-                    return this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer,
-                        environment.electrumPort, environment.electrumProtocol,
+                    return this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                         environment.proxyAddress, Network.from(environment.network));
                 })).subscribe(transactionArrayArray => {
                     repeat = false;
@@ -231,14 +227,12 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     }
 
     loadHistoryFromList(derivedList: Array<Derived>, bigUnconfirmedBalance: Big, bigConfirmedBalance: Big) {
-        this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer,
-            environment.electrumPort, environment.electrumProtocol,
+        this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
             environment.proxyAddress, Network.from(environment.network)).subscribe(transactionArrayArray => {
                 if (transactionArrayArray instanceof Observable) {
                     return;
                 }
-                this.balanceService.transactionOf(derivedList, transactionArrayArray,
-                    environment.electrumServer, environment.electrumPort, environment.electrumProtocol,
+                this.balanceService.transactionOf(derivedList, transactionArrayArray, environment.electrumProtocol,
                     environment.proxyAddress, Network.from(environment.network)).
                     subscribe(transactionArrayArrayResult => {
                         let balance = new Big(0);

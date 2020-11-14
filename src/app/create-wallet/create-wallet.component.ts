@@ -16,6 +16,8 @@ export class CreateWalletComponent implements OnInit {
 
     environment = environment;
 
+    mnemonic = new Mnemonic;
+
     wallet: HdWallet;
     encryptedKey: string;
 
@@ -32,16 +34,18 @@ export class CreateWalletComponent implements OnInit {
     }
 
     newSegwitP2wpkhInP2sh() {
-        const mnemonic = Mnemonic.new();
-        this.wallet = P2wpkhInP2shWallet.account0(mnemonic, this.environment.network);
+        this.mnemonic.phrase = Mnemonic.new().phrase;
+        this.wallet = P2wpkhInP2shWallet.account0(this.mnemonic, this.environment.network);
     }
 
     newP2wpkh() {
-        const mnemonic = Mnemonic.new();
-        this.wallet = P2wpkhWallet.account0(mnemonic, this.environment.network);
+        this.mnemonic.phrase = Mnemonic.new().phrase;
+        this.wallet = P2wpkhWallet.account0(this.mnemonic, this.environment.network);
     }
 
     clean() {
+        this.mnemonic.phrase = null;
+        this.mnemonic.passphrase = null;
         this.wallet = null;
         this.encryptedKey = null;
         this.usePassphrase = null;

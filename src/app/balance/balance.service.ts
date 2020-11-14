@@ -18,9 +18,10 @@ export class BalanceService {
 
     constructor(private httpClient: HttpClient) { }
 
-    loadBalanceFrom(addressList: Array<Address>, electrumServer: string, electrumPort: number, electrumProtocol: string,
+    loadBalanceFrom(addressList: Array<Address>,
+        electrumProtocol: string,
         proxyAddress: string, network: Network) {
-        const call = new Call(electrumServer, electrumPort);
+        const call = new Call();
         let procedure = new Procedure(1, 'server.version');
         procedure.params.push(electrumProtocol);
         procedure.params.push(electrumProtocol);
@@ -31,7 +32,7 @@ export class BalanceService {
             procedure.params.push(address.scriptHash(network));
             call.procedureList.push(procedure.toString());
         });
-        return this.httpClient.post<any[]>(proxyAddress + '/api/proxy', call).pipe(map(data => {
+        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call).pipe(map(data => {
             let responseList = new Array<JsonRpcResponse>();
             for (const responseString of data) {
                 const response = JsonRpcResponse.from(responseString);
@@ -45,9 +46,10 @@ export class BalanceService {
         }));
     }
 
-    loadHistoryFrom(derivedList: Array<Derived>, electrumServer: string, electrumPort: number, electrumProtocol: string,
+    loadHistoryFrom(derivedList: Array<Derived>,
+        electrumProtocol: string,
         proxyAddress: string, network: Network) {
-        const call = new Call(electrumServer, electrumPort);
+        const call = new Call();
         let procedure = new Procedure(1, 'server.version');
         procedure.params.push(electrumProtocol);
         procedure.params.push(electrumProtocol);
@@ -60,7 +62,7 @@ export class BalanceService {
             procedure.params.push(derived.address.scriptHash(network));
             call.procedureList.push(procedure.toString());
         });
-        return this.httpClient.post<any[]>(proxyAddress + '/api/proxy', call).pipe(map(data => {
+        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call).pipe(map(data => {
             let responseList = new Array<JsonRpcResponse>();
             for (const responseString of data) {
                 const response = JsonRpcResponse.from(responseString);
@@ -94,9 +96,10 @@ export class BalanceService {
         }));
     }
 
-    rawTransactionOf(transactionIdList: string[], electrumServer: string, electrumPort: number, electrumProtocol: string,
+    rawTransactionOf(transactionIdList: string[],
+        electrumProtocol: string,
         proxyAddress: string) {
-        const call = new Call(electrumServer, electrumPort);
+        const call = new Call();
         let procedure = new Procedure(1, 'server.version');
         procedure.params.push(electrumProtocol);
         procedure.params.push(electrumProtocol);
@@ -107,14 +110,16 @@ export class BalanceService {
             procedure.params.push(id);
             call.procedureList.push(procedure.toString());
         }
-        return this.httpClient.post<any[]>(proxyAddress + '/api/proxy', call);
+        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call);
     }
 
-    transactionOf(derivedList: Array<Derived>, transactionArrayArray: Array<Array<WsTransaction>>,
-        electrumServer: string, electrumPort: number, electrumProtocol: string,
-        proxyAddress: string, network: Network) {
+    transactionOf(derivedList: Array<Derived>,
+        transactionArrayArray: Array<Array<WsTransaction>>,
+        electrumProtocol: string,
+        proxyAddress: string,
+        network: Network) {
         return this.rawTransactionOf(this.transactionIdListOf(transactionArrayArray),
-            electrumServer, electrumPort, electrumProtocol, proxyAddress).pipe(map(data => {
+            electrumProtocol, proxyAddress).pipe(map(data => {
                 data = data.map(d => JSON.parse(d)).sort((a, b) => a.id > b.id ? 1 : -1);
                 for (let h = 0; h < transactionArrayArray.length; h++) {
                     const transactionArray = transactionArrayArray[h];

@@ -49,9 +49,9 @@ export class SendService {
     //     return feeInSatoshi
     // }
 
-    loadUTXO(derivedList: Array<Derived>, electrumServer: string, electrumPort: number, electrumProtocol: string,
+    loadUTXO(derivedList: Array<Derived>, electrumProtocol: string,
         proxyAddress: string, network: Network) {
-        const call = new Call(electrumServer, electrumPort);
+        const call = new Call();
         let procedure = new Procedure(1, 'server.version');
         procedure.params.push(electrumProtocol);
         procedure.params.push(electrumProtocol);
@@ -67,7 +67,7 @@ export class SendService {
             call.procedureList.push(procedure.toString());
             i++;
         });
-        return this.httpClient.post<any[]>(proxyAddress + '/api/proxy', call).pipe(map((data => {
+        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call).pipe(map((data => {
             let responseList = new Array<JsonRpcResponse>();
             for (const responseString of data) {
                 const response = JsonRpcResponse.from(responseString);
@@ -104,9 +104,9 @@ export class SendService {
         })));
     }
 
-    rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumServer: string, electrumPort: number, electrumProtocol: string,
+    rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumProtocol: string,
         proxyAddress: string) {
-        const call = new Call(electrumServer, electrumPort);
+        const call = new Call();
         let procedure = new Procedure(1, 'server.version');
         procedure.params.push(electrumProtocol);
         procedure.params.push(electrumProtocol);
@@ -117,7 +117,7 @@ export class SendService {
             procedure.params.push(transaction.id);
             call.procedureList.push(procedure.toString());
         });
-        return this.httpClient.post<string[]>(proxyAddress + '/api/proxy', call).pipe(map(data => {
+        return this.httpClient.post<string[]>(proxyAddress + '/proxy', call).pipe(map(data => {
             data = data.map(d => JSON.parse(d))
                 .sort((a, b) => a.id > b.id ? 1 : -1)
                 .slice(1)
@@ -126,9 +126,9 @@ export class SendService {
         }));
     }
 
-    broadcast(transaction: string, electrumServer: string, electrumPort: number, electrumProtocol: string,
+    broadcast(transaction: string, electrumProtocol: string,
         proxyAddress: string) {
-        const call = new Call(electrumServer, electrumPort);
+        const call = new Call();
         let procedure = new Procedure(1, 'server.version');
         procedure.params.push(electrumProtocol);
         procedure.params.push(electrumProtocol);
@@ -136,7 +136,7 @@ export class SendService {
         procedure = new Procedure(2, 'blockchain.transaction.broadcast');
         procedure.params.push(transaction);
         call.procedureList.push(procedure.toString());
-        return this.httpClient.post<any[]>(proxyAddress + '/api/proxy', call);
+        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call);
     }
 
 }

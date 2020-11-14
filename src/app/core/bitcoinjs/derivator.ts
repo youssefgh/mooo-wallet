@@ -1,6 +1,7 @@
 import * as bip32 from 'bip32';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { Derived } from '../derived';
+import { Address } from './address';
 import { Bip32Network } from './bip32Network';
 import { HdCoin } from './hdCoin';
 import { Purpose } from './purpose';
@@ -81,7 +82,7 @@ export class Derivator {
         const derived = new Derived;
         const publicKey = changeNode.derive(index).publicKey;
         const payment = paymentGenerator(publicKey, network);
-        derived.address = payment.address;
+        derived.address = new Address(payment.address);
         derived.index = index;
         derived.publicKey = publicKey;
         return derived;

@@ -8,8 +8,6 @@ export const environment = {
     production: true,
     testnet: false,
     network: networks.bitcoin,
-    electrumServer : '',
-    electrumPort : 0,
     electrumProtocol : '1.4',
     proxyAddress : 'https://proxy.wallet.mooo.tech',
     bitcoinfeesAddress: 'https://bitcoinfees.earn.com/api/v1/fees/list',

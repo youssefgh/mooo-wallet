@@ -8,10 +8,8 @@ export const environment = {
     production: false,
     testnet: true,
     network: networks.testnet,
-    electrumServer : 'localhost',
-    electrumPort : 50111,
     electrumProtocol : '1.4',
-    proxyAddress : 'http://localhost:8100/tcp-rest-proxy',
+    proxyAddress : 'http://localhost:9080',
     bitcoinfeesAddress: 'https://bitcoinfees.earn.com/api/v1/fees/list',
     btc: 'tBTC',
     satoshi: 'tSatoshi'

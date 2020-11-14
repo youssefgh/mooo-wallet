@@ -128,9 +128,9 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     loadUTXOFromList(derivedList: Array<Derived>) {
-        this.sendService.loadUTXO(derivedList, environment.electrumServer, environment.electrumPort, environment.electrumProtocol,
+        this.sendService.loadUTXO(derivedList, environment.electrumProtocol,
             environment.proxyAddress, Network.from(environment.network)).subscribe(data => {
-                this.sendService.rawTransactionListFrom(data.utxoArray, environment.electrumServer, environment.electrumPort,
+                this.sendService.rawTransactionListFrom(data.utxoArray,
                     environment.electrumProtocol, environment.proxyAddress).subscribe(rawTransactionArray => {
                         let i = 0;
                         data.utxoArray.forEach(transaction => {
@@ -161,7 +161,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         let derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
         let lastUsedIndex = -1;
         const usedDerivedList = new Array;
-        this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer, environment.electrumPort, environment.electrumProtocol,
+        this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
             environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
                 if (!repeat) {
                     if (toIndex - lastUsedIndex >= gap) {
@@ -186,8 +186,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
                     toIndex = lastUsedIndex + gap;
                 }
                 derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
-                return this.balanceService.loadHistoryFrom(derivedList, environment.electrumServer,
-                    environment.electrumPort, environment.electrumProtocol,
+                return this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                     environment.proxyAddress, Network.from(environment.network));
             })).subscribe(transactionArrayArray => {
                 repeat = false;
@@ -361,7 +360,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     broadcast() {
-        this.sendService.broadcast(this.psbt.signedTransaction, environment.electrumServer, environment.electrumPort,
+        this.sendService.broadcast(this.psbt.signedTransaction,
             environment.electrumProtocol, environment.proxyAddress).subscribe(data => {
                 let responseList = new Array<JsonRpcResponse>();
                 for (const responseString of data) {
