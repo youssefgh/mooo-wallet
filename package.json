@@ -9,7 +9,8 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "postinstall": "node angular-crypto-patch.js"
+    "postinstall": "node angular-crypto-patch.js",
+    "tslint": "tslint -t json -o tmp/tslint/report.json --project ."
   },
   "private": true,
   "dependencies": {
@@ -27,7 +28,7 @@
     "@zxing/library": "^0.18.3",
     "big.js": "^6.0.1",
     "bip38": "^3.1.1",
-    "bip39": "^3.0.2",
+    "bip39": "^3.0.3",
     "bitcoinjs-lib": "^5.2.0",
     "buffer": "^5.7.0",
     "coinselect": "^3.1.12",

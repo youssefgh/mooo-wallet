@@ -6,15 +6,9 @@ import * as qrcode from 'qrcode';
     templateUrl: './qr-code.component.html',
     styleUrls: ['./qr-code.component.css']
 })
-export class QrCodeComponent implements OnInit {
+export class QrCodeComponent {
 
     @ViewChild('qr', { static: true }) qrCanvas: ElementRef;
-
-    constructor() { }
-
-    ngOnInit() {
-
-    }
 
     @Input()
     set value(value: string) {
