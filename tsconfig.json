@@ -18,6 +18,9 @@
       "dom"
     ],
     "module": "es2020",
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "paths": {
+      "stream": ["./node_modules/stream-browserify"]
+    },
   }
 }
