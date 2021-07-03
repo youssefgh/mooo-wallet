@@ -30,7 +30,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     @ViewChild('scrollTarget', { static: true })
     scrollTarget: ElementRef;
 
-    mnemonic: Mnemonic;
+    mnemonic = new Mnemonic();
 
     xpriv: string;
     xpub: string;
@@ -42,8 +42,6 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     @ViewChild('qrModal', { static: true })
     qrModalRef: ElementRef;
-
-    constructor() { }
 
     ngOnInit() {
         this.coinType = HdCoin.id(environment.network);

@@ -13,13 +13,13 @@
           "options": {
             "allowedCommonJsDependencies": [
               "big.js",
+              "bip32",
               "bip39",
               "bitcoinjs-lib",
               "coinselect/split",
               "materialize-css",
               "qrcode"
             ],
-            "aot": true,
             "outputPath": "dist",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -35,7 +35,13 @@
             ],
             "scripts": [
               "node_modules/materialize-css/dist/js/materialize.js"
-            ]
+            ],
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "buildOptimizer": false,
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true
           },
           "configurations": {
             "test": {
@@ -45,11 +51,9 @@
                   "maximumWarning": "6kb"
                 }
               ],
-              "optimization": false,
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
-              "aot": true,
               "extractLicenses": true,
               "vendorChunk": false,
               "buildOptimizer": true,
@@ -69,11 +73,9 @@
                   "maximumWarning": "6kb"
                 }
               ],
-              "optimization": false,
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
-              "aot": true,
               "extractLicenses": true,
               "vendorChunk": false,
               "buildOptimizer": true,
@@ -86,7 +88,8 @@
               "serviceWorker": true,
               "ngswConfigPath": "ngsw-config.json"
             }
-          }
+          },
+          "defaultConfiguration": ""
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
