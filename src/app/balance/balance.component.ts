@@ -1,15 +1,13 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Big } from 'big.js';
-import { EMPTY, Observable } from 'rxjs';
-import { expand } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Address } from '../core/bitcoinjs/address';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Network } from '../core/bitcoinjs/network';
-import { Derived } from '../core/derived';
+import { GetBalanceResponse } from '../core/electrum/get-balance-response';
+import { GetHistoryResponseItem } from '../core/electrum/get-history-response-item';
 import { WsTransaction } from '../core/electrum/wsTransaction';
 import { BalanceService } from './balance.service';
 
@@ -27,8 +25,6 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     gap = 20;
     confirmedBalance: string;
     unconfirmedBalance: string;
-    private bigConfirmedBalance: Big;
-    private bigUnconfirmedBalance: Big;
     transactionArray: WsTransaction[];
 
     constructor(private balanceService: BalanceService,
@@ -56,8 +52,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     ngAfterContentChecked() {
         M.updateTextFields();
         const elements = document.getElementsByClassName('materialize-textarea');
-        for (let i = 0; i < elements.length; i++) {
-            const element = elements[i];
+        for (const element of elements) {
             M.textareaAutoResize(element);
         }
     }
@@ -73,90 +68,77 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
             address = this.source;
             this.loadBalanceFromAddress(address);
         } else {
-            let derivedList;
-            let fromIndex = 0;
-            const gap = this.gap;
-            let toIndex = gap;
-            let change = 0;
-            let repeat;
-            derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
-            let lastUsedIndex = -1;
-            const usedAddressList = new Array;
-            this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-                environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
-                    if (!repeat) {
-                        if (toIndex - lastUsedIndex >= gap) {
-                            if (change === 0) {
-                                change = 1;
-                                fromIndex = 0;
-                                toIndex = gap;
-                                lastUsedIndex = -1;
-                                // TODO check change gap
-                                // gap = 1
-                            } else {
-                                this.loadBalanceFromList(usedAddressList);
-                                return EMPTY;
-                            }
-                        }
-                    }
-                    // TODO refactor
-                    if (change !== 1 || lastUsedIndex !== -1) {
-                        fromIndex = toIndex;
-                        toIndex = lastUsedIndex + gap;
-                    }
-                    derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
-                    return this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-                        environment.proxyAddress, Network.from(environment.network));
-                })).subscribe(transactionArrayArray => {
-                    repeat = false;
-                    if (!(transactionArrayArray instanceof Observable)) {
-                        for (let index = 0; index < transactionArrayArray.length; index++) {
-                            const transactionArray = transactionArrayArray[index];
-                            if (transactionArray.length !== 0) {
-                                usedAddressList.push(derivedList[index].address);
-                                lastUsedIndex = fromIndex + index;
-                                repeat = true;
-                            }
-                        }
-                    }
-                }, (error: HttpErrorResponse) => {
-                    M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
-                    console.error(error);
-                });
+            this.loadBalanceFromExtendedKey();
         }
     }
 
-    loadBalanceFromAddress(address: string) {
+    async loadBalanceFromAddress(address: string) {
         if (address == null || !Address.isValid(address, environment.network)) {
             M.toast({ html: 'Incorrect address !', classes: 'red' });
         } else {
             const addressList = new Array<Address>();
             addressList.push(new Address(address));
-            this.loadBalanceFromList(addressList);
+
+            const partialResponseList = await this.balanceService.loadBalanceFrom(addressList, environment.electrumProtocol,
+                environment.proxyAddress, Network.from(environment.network));
+            partialResponseList.splice(0, 1);
+            const partialGetBalanceResponseList = partialResponseList.map(response => {
+                return response.toGetBalanceResponse();
+            });
+            const getBalanceResponse = partialGetBalanceResponseList[0];
+
+            this.confirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(getBalanceResponse.confirmed).valueOf();
+            this.unconfirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(getBalanceResponse.unconfirmed).valueOf();
         }
     }
 
-    loadBalanceFromList(addressList: Array<Address>) {
-        this.balanceService.loadBalanceFrom(addressList, environment.electrumProtocol,
-            environment.proxyAddress, Network.from(environment.network)).subscribe((responseList) => {
-                if (responseList instanceof Observable) {
-                    return;
+    async loadBalanceFromExtendedKey() {
+        let addressList: Array<Address>;
+        let fromIndex = 0;
+        let change = 0;
+
+        let found;
+        let getBalanceResponseList = new Array<GetBalanceResponse>();
+        try {
+            do {
+                found = false;
+                addressList = Derivator.derive(this.source, change, fromIndex, fromIndex + this.gap, environment.network)
+                    .map(derived => {
+                        return derived.address;
+                    });
+                const partialResponseList = await this.balanceService.loadBalanceFrom(addressList, environment.electrumProtocol,
+                    environment.proxyAddress, Network.from(environment.network));
+                partialResponseList.splice(0, 1);
+                const partialGetBalanceResponseList = partialResponseList.map(response => {
+                    return response.toGetBalanceResponse();
+                });
+                for (const getBalanceResponse of partialGetBalanceResponseList) {
+                    if (getBalanceResponse.confirmed.gt(new Big(0)) || getBalanceResponse.unconfirmed.gt(new Big(0))) {
+                        found = true;
+                        break;
+                    }
                 }
-                let confirmedBalance = new Big(0);
-                let unconfirmedBalance = new Big(0);
-                for (let index = 1; index < responseList.length; index++) {
-                    const result = responseList[index].result;
-                    confirmedBalance = confirmedBalance.plus(result.confirmed);
-                    unconfirmedBalance = unconfirmedBalance.plus(result.unconfirmed);
+                getBalanceResponseList = getBalanceResponseList.concat(partialGetBalanceResponseList);
+                fromIndex = fromIndex + this.gap;
+
+                if (!found && change === 0) {
+                    change = 1;
+                    fromIndex = 0;
                 }
-                this.confirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(confirmedBalance).valueOf();
-                this.unconfirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(unconfirmedBalance).valueOf();
-                this.bigConfirmedBalance = confirmedBalance;
-                this.bigUnconfirmedBalance = unconfirmedBalance;
-            }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
-                console.error(error);
-            });
+            } while (found || fromIndex === 0);
+
+            let confirmedBalance = new Big(0);
+            let unconfirmedBalance = new Big(0);
+            for (const getBalanceResponse of getBalanceResponseList) {
+                confirmedBalance = confirmedBalance.plus(getBalanceResponse.confirmed);
+                unconfirmedBalance = unconfirmedBalance.plus(getBalanceResponse.unconfirmed);
+            }
+            this.confirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(confirmedBalance).valueOf();
+            this.unconfirmedBalance = this.conversionService.bigSatoshiToBitcoinBig(unconfirmedBalance).valueOf();
+        } catch (error) {
+            M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
+            console.error(error);
+        }
     }
 
     reloadBalance() {
@@ -168,95 +150,104 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
 
     loadHistory() {
         const prefix = this.source.substr(1, 3);
+        let address;
         if (prefix !== 'pub') {
-            const derived = new Derived;
-            derived.address = new Address(this.source);
-            const derivedList = new Array<Derived>();
-            derivedList.push(derived);
-            this.loadHistoryFromList(derivedList, this.bigUnconfirmedBalance, this.bigConfirmedBalance);
+            address = this.source;
+            this.loadHistoryFromAddress(address);
         } else {
-            let fromIndex = 0;
-            const gap = this.gap;
-            let toIndex = gap;
-            let change = 0;
-            let repeat;
-            let derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
-            let lastUsedIndex = -1;
-            const usedDerivedList = new Array<Derived>();
-            this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-                environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
-                    if (!repeat) {
-                        if (toIndex - lastUsedIndex >= gap) {
-                            if (change === 0) {
-                                change = 1;
-                                fromIndex = 0;
-                                toIndex = gap;
-                                lastUsedIndex = -1;
-                                // TODO check change gap
-                                // gap = 1
-                            } else {
-                                this.loadHistoryFromList(usedDerivedList, this.bigUnconfirmedBalance, this.bigConfirmedBalance);
-                                return EMPTY;
-                            }
-                        }
-                    }
-                    if (change !== 1 || lastUsedIndex !== -1) {
-                        fromIndex = toIndex;
-                        toIndex = lastUsedIndex + gap;
-                    }
-                    derivedList = Derivator.derive(this.source, change, fromIndex, toIndex, environment.network);
-                    return this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-                        environment.proxyAddress, Network.from(environment.network));
-                })).subscribe(transactionArrayArray => {
-                    repeat = false;
-                    if (!(transactionArrayArray instanceof Observable)) {
-                        for (let index = 0; index < transactionArrayArray.length; index++) {
-                            const transactionArray = transactionArrayArray[index];
-                            if (transactionArray.length !== 0) {
-                                usedDerivedList.push(derivedList[index]);
-                                lastUsedIndex = fromIndex + index;
-                                repeat = true;
-                            }
-                        }
-                    }
-                }, (error: HttpErrorResponse) => {
-                    M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
-                    console.error(error);
-                });
+            this.loadHistoryFromExtendedKey();
         }
     }
 
-    loadHistoryFromList(derivedList: Array<Derived>, bigUnconfirmedBalance: Big, bigConfirmedBalance: Big) {
-        this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-            environment.proxyAddress, Network.from(environment.network)).subscribe(transactionArrayArray => {
-                if (transactionArrayArray instanceof Observable) {
-                    return;
-                }
-                this.balanceService.transactionOf(derivedList, transactionArrayArray, environment.electrumProtocol,
-                    environment.proxyAddress, Network.from(environment.network)).
-                    subscribe(transactionArrayArrayResult => {
-                        let balance = new Big(0);
-                        // TODO refactor
-                        let transactionArrayTemp = new Array<WsTransaction>();
-                        for (const transactionArray of transactionArrayArrayResult) {
-                            for (const transaction of transactionArray) {
-                                transaction.amount = this.conversionService.satoshiToBitcoin(transaction.satoshis);
-                                balance = balance.plus(transaction.satoshis);
-                                transactionArrayTemp.push(transaction);
-                            }
-                        }
-                        const totalBalance = bigConfirmedBalance.plus(bigUnconfirmedBalance);
-                        if (!balance.eq(totalBalance)) {
-                            console.error('balance :' + balance + 'different than confirmedBalance: ' + this.confirmedBalance +
-                                ' and unconfirmedBalance: ' + this.unconfirmedBalance);
-                        }
-                        transactionArrayTemp = transactionArrayTemp.sort((a, b) => a.confirmations > b.confirmations ? 1 : -1);
-                        this.transactionArray = transactionArrayTemp;
+    async loadHistoryFromAddress(address: string) {
+        const addressList = new Array<Address>();
+        addressList.push(new Address(address));
+
+        const partialResponseList = await this.balanceService.loadHistoryFrom(addressList, environment.electrumProtocol,
+            environment.proxyAddress, Network.from(environment.network));
+        partialResponseList.splice(0, 1);
+        const headersResponse = partialResponseList[0].toHeadersResponse();
+        partialResponseList.splice(0, 1);
+        const partialGetHistoryResponseList = partialResponseList.map(response => {
+            return response.toGetHistoryResponse().filter(item => item.transactionHash);
+        });
+        const getHistoryResponse = partialGetHistoryResponseList[0];
+        this.transactionArray = getHistoryResponse.map(getHistoryResponseItem => {
+            const wsTransaction = new WsTransaction();
+            wsTransaction.id = getHistoryResponseItem.transactionHash;
+            wsTransaction.height = getHistoryResponseItem.height;
+            if (wsTransaction.height) {
+                wsTransaction.confirmations = headersResponse.height - wsTransaction.height + 1;
+            } else {
+                wsTransaction.confirmations = 0;
+            }
+            return wsTransaction;
+        }).sort((a, b) => a.confirmations > b.confirmations ? 1 : -1);
+    }
+
+    async loadHistoryFromExtendedKey() {
+        let addressList: Array<Address>;
+        let fromIndex = 0;
+        let change = 0;
+
+        let found;
+        let getHistoryResponseItemList = new Array<GetHistoryResponseItem>();
+        let headersResponse;
+        try {
+            do {
+                found = false;
+                addressList = Derivator.derive(this.source, change, fromIndex, fromIndex + this.gap, environment.network)
+                    .map(derived => {
+                        return derived.address;
                     });
-            }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
-                console.error(error);
-            });
+                const partialResponseList = await this.balanceService.loadHistoryFrom(addressList, environment.electrumProtocol,
+                    environment.proxyAddress, Network.from(environment.network));
+                partialResponseList.splice(0, 1);
+                headersResponse = partialResponseList[0].toHeadersResponse();
+                partialResponseList.splice(0, 1);
+                const partialGetHistoryResponseList = partialResponseList.map(response => {
+                    return response.toGetHistoryResponse().filter(item => item.transactionHash);
+                });
+                for (const getHistoryResponse of partialGetHistoryResponseList) {
+                    for (const getHistoryResponseItem of getHistoryResponse) {
+                        if (getHistoryResponseItem.transactionHash) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    getHistoryResponseItemList = getHistoryResponseItemList.concat(getHistoryResponse);
+                }
+
+                fromIndex = fromIndex + this.gap;
+
+                if (!found && change === 0) {
+                    change = 1;
+                    fromIndex = 0;
+                }
+            } while (found || fromIndex === 0);
+
+            this.transactionArray = getHistoryResponseItemList.map(getHistoryResponseItem => {
+                const wsTransaction = new WsTransaction();
+                wsTransaction.id = getHistoryResponseItem.transactionHash;
+                wsTransaction.height = getHistoryResponseItem.height;
+                if (wsTransaction.height) {
+                    wsTransaction.confirmations = headersResponse.height - wsTransaction.height + 1;
+                } else {
+                    wsTransaction.confirmations = 0;
+                }
+                return wsTransaction;
+            })
+                .sort((a, b) => a.confirmations > b.confirmations ? 1 : -1)
+                .filter((value, index, self) => {
+                    if (index !== 0) {
+                        return self[index - 1].id !== value.id;
+                    }
+                    return true;
+                });
+        } catch (error) {
+            M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
+            console.error(error);
+        }
     }
 
     clear() {

@@ -48,8 +48,10 @@
             </div>
             <div *ngIf="!transactionArray" class="row">
                 <div class="col s12 center-align">
-                    <a class="waves-effect waves-light btn" (click)="loadHistory()"><i
-                            class="material-icons left">history</i>Load history</a>
+                    <a class="waves-effect waves-light btn" (click)="loadHistory()">
+                        <i class="material-icons left">history</i>
+                        Load history
+                    </a>
                 </div>
             </div>
             <div *ngIf="transactionArray" class="row">
@@ -58,17 +60,16 @@
                         <tr>
                             <th>Transaction ID</th>
                             <th>Number of confirmations</th>
-                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let transaction of transactionArray; let i = index" [attr.data-index]="i">
-                            <td>{{transaction.id}}</td>
+                            <td>
+                                <a [href]="environment.blockExplorer+transaction.id" target="_blank">
+                                    {{transaction.id}}
+                                </a>
+                            </td>
                             <td>{{transaction.confirmations}}</td>
-                            <td *ngIf="transaction.amount > 0"><span class="new badge left green"
-                                    [attr.data-badge-caption]="environment.btc">+{{transaction.amount}}</span></td>
-                            <td *ngIf="transaction.amount < 0"><span class="new badge left red"
-                                    [attr.data-badge-caption]="environment.btc">{{transaction.amount}}</span></td>
                         </tr>
                     </tbody>
                 </table>

@@ -5,7 +5,6 @@ import * as coinSelect from 'coinselect/split';
 import { EMPTY, Observable } from 'rxjs';
 import { expand } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { BalanceService } from '../balance/balance.service';
 import { ConversionService } from '../conversion.service';
 import { Fee } from '../core/bitcoinfees/fee';
 import { FeeResponse } from '../core/bitcoinfees/fee-response';
@@ -64,7 +63,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     @ViewChild('qrModal', { static: true })
     qrModalRef: ElementRef;
 
-    constructor(private balanceService: BalanceService,
+    constructor(
         private conversionService: ConversionService,
         private httpClient: HttpClient,
         private sendService: SendService
@@ -161,7 +160,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         let derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
         let lastUsedIndex = -1;
         const usedDerivedList = new Array;
-        this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
+        this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
             environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
                 if (!repeat) {
                     if (toIndex - lastUsedIndex >= gap) {
@@ -186,7 +185,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
                     toIndex = lastUsedIndex + gap;
                 }
                 derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
-                return this.balanceService.loadHistoryFrom(derivedList, environment.electrumProtocol,
+                return this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                     environment.proxyAddress, Network.from(environment.network));
             })).subscribe(transactionArrayArray => {
                 repeat = false;

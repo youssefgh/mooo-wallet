@@ -11,6 +11,7 @@ export const environment = {
     electrumProtocol : '1.4',
     proxyAddress : 'http://localhost:9080',
     bitcoinfeesAddress: 'https://bitcoinfees.earn.com/api/v1/fees/list',
+    blockExplorer: 'https://blockstream.info/testnet/tx/',
     btc: 'tBTC',
     satoshi: 'tSatoshi'
 };

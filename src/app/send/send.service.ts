@@ -139,4 +139,54 @@ export class SendService {
         return this.httpClient.post<any[]>(proxyAddress + '/proxy', call);
     }
 
+    loadHistoryFrom(derivedList: Array<Derived>,
+        electrumProtocol: string,
+        proxyAddress: string, network: Network) {
+        const call = new Call();
+        let procedure = new Procedure(1, 'server.version');
+        procedure.params.push(electrumProtocol);
+        procedure.params.push(electrumProtocol);
+        call.procedureList.push(procedure.toString());
+        procedure = new Procedure(2, 'blockchain.headers.subscribe');
+        call.procedureList.push(procedure.toString());
+        let i = 3;
+        derivedList.forEach(derived => {
+            procedure = new Procedure(i++, 'blockchain.scripthash.get_history');
+            procedure.params.push(derived.address.scriptHash(network));
+            call.procedureList.push(procedure.toString());
+        });
+        return this.httpClient.post<Array<string>>(proxyAddress + '/proxy', call).pipe(map(data => {
+            let responseList = new Array<JsonRpcResponse>();
+            for (const responseString of data) {
+                const response = JsonRpcResponse.from(responseString);
+                if (response.error) {
+                    return throwError(response.error.message);
+                }
+                responseList.push(response);
+            }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
+            const lastBlockHeight: number = responseList[1].result.height;
+            const transactionArrayArray = new Array<Array<WsTransaction>>();
+            for (let index = 2; index < responseList.length; index++) {
+                const response = responseList[index];
+                const transactionArray = new Array<WsTransaction>();
+                for (const item of response.result.reverse()) {
+                    const transaction = new WsTransaction;
+                    transaction.inCount = 0;
+                    transaction.id = item.tx_hash;
+                    transaction.satoshis = 0;
+                    transaction.height = item.height;
+                    if (transaction.height > 0) {
+                        transaction.confirmations = lastBlockHeight - transaction.height + 1;
+                    } else {
+                        transaction.confirmations = 0;
+                    }
+                    transactionArray.push(transaction);
+                }
+                transactionArrayArray.push(transactionArray);
+            }
+            return transactionArrayArray;
+        }));
+    }
+
 }
