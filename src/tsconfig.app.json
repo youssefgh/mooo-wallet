@@ -8,6 +8,9 @@
       "stream": [
         "../node_modules/stream-browserify"
       ],
+      "process": [
+        "../node_modules/process"
+      ],
     },
   },
   "files": [
