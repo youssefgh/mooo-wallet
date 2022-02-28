@@ -7,7 +7,7 @@ import {networks} from 'bitcoinjs-lib';
 export const environment = {
     production: false,
     testnet: true,
-    network: networks.testnet,
+    network: networks.regtest,
     electrumProtocol : '1.4',
     proxyAddress : 'http://localhost:9080',
     bitcoinfeesAddress: 'https://bitcoinfees.earn.com/api/v1/fees/list',

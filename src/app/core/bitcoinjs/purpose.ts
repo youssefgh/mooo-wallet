@@ -15,7 +15,7 @@ export class Purpose {
                 }
                 break;
             case 't':
-                if (network === bitcoinjs.networks.testnet) {
+                if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
                     purpose = 44;
                 } else {
                     throw new Error('Incompatible network');
@@ -29,7 +29,7 @@ export class Purpose {
                 }
                 break;
             case 'u':
-                if (network === bitcoinjs.networks.testnet) {
+                if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
                     purpose = 49;
                 } else {
                     throw new Error('Incompatible network');
@@ -43,7 +43,7 @@ export class Purpose {
                 }
                 break;
             case 'v':
-                if (network === bitcoinjs.networks.testnet) {
+                if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
                     purpose = 84;
                 } else {
                     throw new Error('Incompatible network');
