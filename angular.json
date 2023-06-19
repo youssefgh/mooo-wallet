@@ -146,7 +146,6 @@
       }
     }
   },
-  "defaultProject": "wallet-web-client",
   "schematics": {
     "@schematics/angular:component": {
       "prefix": "app",
