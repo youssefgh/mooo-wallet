@@ -4,7 +4,7 @@ import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/derived';
 
-declare var M: any;
+declare const M: any;
 
 @Component({
     selector: 'app-extended-key-derivation',
@@ -39,7 +39,7 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     ngOnInit() {
         if (this.route.snapshot.queryParamMap.get('key') !== null) {
             this.key = this.route.snapshot.queryParamMap.get('key');
-            if (this.key.substr(1, 4) === 'priv') {
+            if (this.key.substring(1, 4) === 'priv') {
                 M.toast({
                     html: 'You wrote the private key in your browser address bar, ' +
                         'which means it is now probably stored in your browser history !' +
@@ -56,13 +56,12 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     ngAfterContentChecked() {
         M.updateTextFields();
         const elements = document.getElementsByClassName('materialize-textarea');
-        for (let i = 0; i < elements.length; i++) {
-            const element = elements[i];
+        for (const element of elements) {
             M.textareaAutoResize(element);
         }
     }
 
-    onQrScan(text: string) {
+    onQrScan(text: any) {
         this.key = text;
     }
 

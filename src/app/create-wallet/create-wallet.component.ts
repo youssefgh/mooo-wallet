@@ -5,8 +5,6 @@ import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { P2wpkhInP2shWallet } from '../core/bitcoinjs/p2wpkhInP2shWallet';
 import { P2wpkhWallet } from '../core/bitcoinjs/p2wpkhWallet';
 
-declare var M: any;
-
 @Component({
     selector: 'app-create-wallet',
     templateUrl: './create-wallet.component.html',
@@ -23,8 +21,6 @@ export class CreateWalletComponent implements OnInit {
 
     usePassphrase: boolean;
     useNativeSegwit: boolean;
-
-    constructor() { }
 
     ngOnInit() {
         // TODO enable after MaterializeCSS bug fix

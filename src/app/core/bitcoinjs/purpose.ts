@@ -4,7 +4,7 @@ export class Purpose {
 
     static from(extendedkey: string, network: bitcoinjs.Network) {
         // TODO remove network validation
-        const prefix = extendedkey.substr(0, 1);
+        const prefix = extendedkey.substring(0, 1);
         let purpose;
         switch (prefix) {
             case 'x':

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { environment } from '../../environments/environment';
 
-declare var M: any;
+declare const M: any;
 
 @Component({
     selector: 'app-side-navigation',
@@ -11,8 +11,6 @@ declare var M: any;
 export class SideNavigationComponent implements OnInit {
 
     title: string;
-
-    constructor() { }
 
     ngOnInit() {
         const elems = document.querySelectorAll('.sidenav');

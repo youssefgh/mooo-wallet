@@ -61,6 +61,7 @@ import 'zone.js';  // Included with Angular CLI.
 // import 'intl/locale-data/jsonp/en';
 
 // Add to window, assigning the value of window itself.
+(window as any).global = window;
 import * as process from "process";
 import { Buffer } from "buffer";
 (window as any).process = process;

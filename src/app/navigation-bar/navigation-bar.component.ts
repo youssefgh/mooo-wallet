@@ -1,6 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 
-declare var M: any;
+declare const M: any;
 
 @Component({
     selector: 'app-navigation-bar',
@@ -13,8 +13,6 @@ export class NavigationBarComponent implements OnInit {
     @Input()
     header: string;
     sideNav: any;
-
-    constructor() { }
 
     ngOnInit() {
         const sideNavElement = document.querySelector('#slide-out');

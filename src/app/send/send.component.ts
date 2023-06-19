@@ -18,7 +18,7 @@ import { WsTransaction } from '../core/electrum/wsTransaction';
 import { Output } from '../core/output';
 import { SendService } from './send.service';
 
-declare var M: any;
+declare const M: any;
 
 @Component({
     selector: 'app-send',
@@ -79,13 +79,12 @@ export class SendComponent implements OnInit, AfterContentChecked {
     ngAfterContentChecked() {
         M.updateTextFields();
         const elements = document.getElementsByClassName('materialize-textarea');
-        for (let i = 0; i < elements.length; i++) {
-            const element = elements[i];
+        for (const element of elements) {
             M.textareaAutoResize(element);
         }
     }
 
-    onSourceQrScan(text: string) {
+    onSourceQrScan(text: any) {
         this.from = text;
     }
 
@@ -244,7 +243,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    onDestinationQrScan(text: string) {
+    onDestinationQrScan(text: any) {
         this.selectedDestination = text;
     }
 

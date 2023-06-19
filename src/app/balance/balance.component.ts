@@ -11,7 +11,7 @@ import { GetHistoryResponseItem } from '../core/electrum/get-history-response-it
 import { WsTransaction } from '../core/electrum/wsTransaction';
 import { BalanceService } from './balance.service';
 
-declare var M: any;
+declare const M: any;
 
 @Component({
     selector: 'app-balance',
@@ -37,7 +37,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         if (this.route.snapshot.queryParamMap.get('source') !== null) {
             this.source = this.route.snapshot.queryParamMap.get('source');
             this.loadBalance();
-            if (this.source.substr(1, 4) === 'priv') {
+            if (this.source.substring(1, 4) === 'priv') {
                 M.toast({
                     html: 'You wrote the private key in your browser address bar, ' +
                         'which means it is now probably stored in your browser history !' +
@@ -57,12 +57,12 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    onQrScan(text: string) {
+    onQrScan(text: any) {
         this.source = text;
     }
 
     loadBalance() {
-        const prefix = this.source.substr(1, 3);
+        const prefix = this.source.substring(1, 3);
         let address;
         if (prefix !== 'pub') {
             address = this.source;
@@ -149,7 +149,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     }
 
     loadHistory() {
-        const prefix = this.source.substr(1, 3);
+        const prefix = this.source.substring(1, 3);
         let address;
         if (prefix !== 'pub') {
             address = this.source;

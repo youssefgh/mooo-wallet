@@ -6,7 +6,7 @@ import { HdRoot } from '../core/bitcoinjs/hdRoot';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { Derived } from '../core/derived';
 
-declare var M: any;
+declare const M: any;
 
 @Component({
     selector: 'app-mnemonic-derivation',
