@@ -84,7 +84,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    onSourceQrScan(text: any) {
+    onSourceQrScan(text: string) {
         this.from = text;
     }
 
@@ -243,7 +243,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    onDestinationQrScan(text: any) {
+    onDestinationQrScan(text: string) {
         this.selectedDestination = text;
     }
 

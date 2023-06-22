@@ -1,5 +1,6 @@
-import * as bip32 from 'bip32';
+import { BIP32Interface } from 'bip32';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import { Bip32Utils } from '../bip32.utils';
 import { Derived } from '../derived';
 import { Address } from './address';
 import { Bip32Network } from './bip32Network';
@@ -12,7 +13,7 @@ export class Derivator {
     static derive(extendedkey: string, change: number, startIndex: number, endIndex: number, network: bitcoinjs.Network) {
         const purpose = Purpose.from(extendedkey, network);
         const wif = Wif.of(network);
-        const node = bip32.fromBase58(extendedkey, { wif: wif, bip32: Bip32Network.from(purpose, network) });
+        const node = Bip32Utils.instance.fromBase58(extendedkey, { wif: wif, bip32: Bip32Network.from(purpose, network) });
         const changeNode = node.derive(change);
         const derivedArray = this.deriveList(purpose, changeNode, startIndex, endIndex, network);
 
@@ -68,7 +69,7 @@ export class Derivator {
         });
     }
 
-    static deriveBIPList(changeNode: bitcoinjs.bip32.BIP32Interface, startIndex: number, endIndex: number,
+    static deriveBIPList(changeNode: BIP32Interface, startIndex: number, endIndex: number,
         paymentGenerator: Function, network: bitcoinjs.Network) {
         const derivedList = new Array;
         for (let i = startIndex; i < endIndex; i++) {
@@ -78,7 +79,7 @@ export class Derivator {
         return derivedList;
     }
 
-    static deriveBIP(changeNode: bitcoinjs.bip32.BIP32Interface, index: number, paymentGenerator: Function, network: bitcoinjs.Network) {
+    static deriveBIP(changeNode: BIP32Interface, index: number, paymentGenerator: Function, network: bitcoinjs.Network) {
         const derived = new Derived;
         const publicKey = changeNode.derive(index).publicKey;
         const payment = paymentGenerator(publicKey, network);

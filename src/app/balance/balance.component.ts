@@ -57,7 +57,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    onQrScan(text: any) {
+    onQrScan(text: string) {
         this.source = text;
     }
 

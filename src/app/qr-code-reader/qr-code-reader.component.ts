@@ -11,10 +11,10 @@ declare const M: any;
 export class QrCodeReaderComponent implements OnInit {
 
     @Output()
-    scannedAction = new EventEmitter<string>();
+    scanned = new EventEmitter<string>();
 
     @Output()
-    errorAction = new EventEmitter<string>();
+    error = new EventEmitter<string>();
 
     codeReader = new BrowserQRCodeReader();
 
@@ -63,10 +63,10 @@ export class QrCodeReaderComponent implements OnInit {
             const file = fileList[0];
             const imgSrc = URL.createObjectURL(file);
             this.codeReader.decodeFromImageUrl(imgSrc).then(result => {
-                this.scannedAction.emit(result.getText());
+                this.scanned.emit(result.getText());
             }).catch(err => {
                 console.error(err);
-                this.errorAction.emit(err);
+                this.error.emit(err);
             });
         }
     }
@@ -80,11 +80,11 @@ export class QrCodeReaderComponent implements OnInit {
         this.codeReader
             .decodeOnceFromVideoDevice(deviceInfo.deviceId, 'video')
             .then(result => {
-                this.scannedAction.emit(result.getText());
+                this.scanned.emit(result.getText());
                 this.stopDecodeFromVideoDevice();
             }).catch(err => {
                 console.error(err);
-                this.errorAction.emit(err);
+                this.error.emit(err);
             });
     }
 

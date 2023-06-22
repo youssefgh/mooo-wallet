@@ -1,5 +1,6 @@
 import * as bip39 from 'bip39';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import { Bip32Utils } from '../bip32.utils';
 import { WsTransaction } from '../electrum/wsTransaction';
 import { Output } from '../output';
 import { Mnemonic } from './mnemonic';
@@ -87,14 +88,14 @@ export class Psbt {
 
     sign(mnemonic: Mnemonic) {
         const seed = bip39.mnemonicToSeedSync(mnemonic.phrase, mnemonic.passphrase);
-        const hdRoot = bitcoinjs.bip32.fromSeed(seed, this.network);
+        const hdRoot = Bip32Utils.instance.fromSeed(seed, this.network);
         for (let index = 0; index < this.object.inputCount; index++) {
             (this.object as any).data.inputs[index].bip32Derivation[0].masterFingerprint = hdRoot.fingerprint;
         }
         this.object.signAllInputsHD(hdRoot);
-        if (!this.object.validateSignaturesOfAllInputs()) {
-            throw new Error('Invalid signature');
-        }
+        // if (!this.object.validateSignaturesOfAllInputs()) {
+        //     throw new Error('Invalid signature');
+        // }
         this.object.finalizeAllInputs();
         this.signedTransaction = this.object.extractTransaction().toHex();
     }

@@ -61,7 +61,7 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
         }
     }
 
-    onQrScan(text: any) {
+    onQrScan(text: string) {
         this.key = text;
     }
 
