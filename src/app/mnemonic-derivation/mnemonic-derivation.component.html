@@ -35,24 +35,18 @@
             </div>
             <div class="col s3">
                 <label>
-                    <input name="derivationPathGroup" type="radio" (click)="setCustom()" />
-                    <span>Custom</span>
+                    <input name="derivationPathGroup" type="radio" [checked]="purpose === 86" (click)="setBIP(86)" />
+                    <span>BIP86</span>
                 </label>
             </div>
         </div>
-        <div class="row center-align" *ngIf="customDerivation">
-            <div class="col s12 input-field">
-                <input id="derivationPath" type="text" [(ngModel)]="customDerivationPath">
-                <label for="derivationPath">Derivation Path</label>
-            </div>
-        </div>
-        <div class="row center-align" *ngIf="!customDerivation">
+        <div class="row center-align">
             <div class="col s12 input-field">
                 <input id="derivationPath" type="text" readonly [value]="derivationPath()">
                 <label for="derivationPath">Derivation Path</label>
             </div>
         </div>
-        <div class="row center-align" *ngIf="!customDerivation">
+        <div class="row center-align">
             <div class="col s12 input-field">
                 <input id="account" type="number" min="0" [(ngModel)]="account">
                 <label for="account">Account</label>
@@ -68,7 +62,7 @@
                     (click)="derive()">Derive</a>
             </div>
         </div>
-        <div *ngIf="!customDerivation && derivedArray && derivedArray.length !== 0" class="row center-align">
+        <div *ngIf="derivedArray && derivedArray.length !== 0" class="row center-align">
             <div class="col s12 input-field">
                 <input id="xpriv" type="text" [value]="xpriv">
                 <label for="xpriv">Extended private key (Account {{account}})</label>

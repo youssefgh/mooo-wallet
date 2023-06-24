@@ -1,5 +1,6 @@
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { networks } from 'bitcoinjs-lib';
 import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/derived';
@@ -16,6 +17,7 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     environment = environment;
 
     key: string;
+    isLegacyAccount = false;
 
     derivedArray: Array<Derived>;
 
@@ -65,6 +67,14 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
         this.key = text;
     }
 
+    isPossibleLegacyAccount() {
+        return this.key && (
+            (environment.network === networks.bitcoin && this.key.startsWith('xpub'))
+            || (environment.network === networks.testnet && this.key.startsWith('tpub'))
+            || (environment.network === networks.regtest && this.key.startsWith('tpub'))
+        );
+    }
+
     deriveReceiving() {
         this.change = 0;
         this.derive(this.change);
@@ -75,11 +85,15 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
         this.derive(this.change);
     }
 
-    derive(change?) {
+    derive(change?: number) {
         if (change === undefined) {
             change = this.change;
         }
-        this.derivedArray = Derivator.derive(this.key, change, this.fromIndex, this.toIndex, environment.network);
+        if (!this.isLegacyAccount) {
+            this.derivedArray = Derivator.derive(this.key, change, this.fromIndex, this.toIndex, environment.network);
+        } else {
+            this.derivedArray = Derivator.deriveWithPurpose(this.key, 44, change, this.fromIndex, this.toIndex, environment.network);
+        }
         this.scrollTarget.nativeElement.scrollIntoView();
     }
 

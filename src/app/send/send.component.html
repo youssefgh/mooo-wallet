@@ -68,10 +68,6 @@
                     </span>
                 </div>
             </div>
-            <div class="col s12">
-                Estimated confirmation time : {{minimumEstimatedConfirmationTimeInMinute}}min to
-                {{maximumEstimatedConfirmationTimeInMinute}}min
-            </div>
         </div>
         <div *ngIf="balance?.gt(0) && !psbt" class="row">
             <div class="input-field col s12 l5 xl4">

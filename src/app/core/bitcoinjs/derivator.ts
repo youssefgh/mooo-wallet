@@ -1,5 +1,6 @@
 import { BIP32Interface } from 'bip32';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371';
 import { Bip32Utils } from '../bip32.utils';
 import { Derived } from '../derived';
 import { Address } from './address';
@@ -12,6 +13,10 @@ export class Derivator {
 
     static derive(extendedkey: string, change: number, startIndex: number, endIndex: number, network: bitcoinjs.Network) {
         const purpose = Purpose.from(extendedkey, network);
+        return Derivator.deriveWithPurpose(extendedkey, purpose, change, startIndex, endIndex, network);
+    }
+
+    static deriveWithPurpose(extendedkey: string, purpose: number, change: number, startIndex: number, endIndex: number, network: bitcoinjs.Network) {
         const wif = Wif.of(network);
         const node = Bip32Utils.instance.fromBase58(extendedkey, { wif: wif, bip32: Bip32Network.from(purpose, network) });
         const changeNode = node.derive(change);
@@ -28,7 +33,7 @@ export class Derivator {
         return derivedArray;
     }
 
-    static deriveList(purpose, changeNode, startIndex, endIndex, network: bitcoinjs.Network): Array<Derived> {
+    static deriveList(purpose: number, changeNode: BIP32Interface, startIndex: number, endIndex: number, network: bitcoinjs.Network): Array<Derived> {
         let derivedArray = new Array;
         let paymentGenerator;
         switch (purpose) {
@@ -37,6 +42,8 @@ export class Derivator {
             case 49: paymentGenerator = this.bip49Payment;
                 break;
             case 84: paymentGenerator = this.bip84Payment;
+                break;
+            case 86: paymentGenerator = this.bip86Payment;
                 break;
             default: // TODO print error
                 return;
@@ -65,6 +72,13 @@ export class Derivator {
     static bip84Payment(publicKey: Buffer, network: bitcoinjs.Network) {
         return bitcoinjs.payments.p2wpkh({
             pubkey: publicKey,
+            network: network
+        });
+    }
+
+    static bip86Payment(publicKey: Buffer, network: bitcoinjs.Network) {
+        return bitcoinjs.payments.p2tr({
+            internalPubkey: toXOnly(publicKey),
             network: network
         });
     }

@@ -4,9 +4,13 @@
     <div class="container">
         <div class="row center-align">
             <div *ngIf="!wallet" class="col s12">
-                <label>
-                    <input type="checkbox" id="nativeSegwitActivation" [(ngModel)]="useNativeSegwit" />
-                    <span for="nativeSegwitActivation">Native Segwit</span>
+                <label class="col s4 offset-s2 m2 offset-m4">
+                    <input name="walletType" type="radio" [value]="'segwit'" [(ngModel)]="walletType" />
+                    <span>Segwit</span>
+                </label>
+                <label class="col s4 m2">
+                    <input name="walletType" type="radio" [value]="'taproot'" [(ngModel)]="walletType" />
+                    <span>Taproot</span>
                 </label>
             </div>
             <div *ngIf="!wallet" class="col s12 input-field">
@@ -16,12 +20,12 @@
         </div>
         <div class="row">
             <div class="center-align">
-                <a *ngIf="!useNativeSegwit && (!usePassphrase || mnemonic.passphrase) && !wallet"
-                    class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
-                    (click)="newSegwitP2wpkhInP2sh()">Generate</a>
-                <a *ngIf="useNativeSegwit && (!usePassphrase || mnemonic.passphrase) && !wallet"
+                <a *ngIf="isSegwit() && (!usePassphrase || mnemonic.passphrase) && !wallet"
                     class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
                     (click)="newP2wpkh()">Generate</a>
+                <a *ngIf="isTaproot() && (!usePassphrase || mnemonic.passphrase) && !wallet"
+                    class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
+                    (click)="newP2tr()">Generate</a>
             </div>
         </div>
         <div *ngIf="wallet" class="row">

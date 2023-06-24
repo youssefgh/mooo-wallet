@@ -4,7 +4,6 @@ import { Big } from 'big.js';
 import { throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ConversionService } from '../conversion.service';
-import { Fee } from '../core/bitcoinfees/fee';
 import { Network } from '../core/bitcoinjs/network';
 import { Derived } from '../core/derived';
 import { Call } from '../core/electrum/call';
@@ -29,14 +28,6 @@ export class SendService {
         return balance;
     }
 
-    feeForEstimatedConfirmationTime(minutes: number, feeArray: Fee[]) {
-        for (const fee of feeArray) {
-            if (fee.maxMinutes < 60) {
-                return fee;
-            }
-        }
-    }
-
     // transactionFee(transaction: bitcoinjs.Transaction, utxoArray: Array<Transaction>, satoshiPerByte: number) {
     //     let feeInSatoshi
     //     if (utxoArray[0].derived.purpose == 49 || utxoArray[0].derived.purpose == 84) {
@@ -52,15 +43,15 @@ export class SendService {
     loadUTXO(derivedList: Array<Derived>, electrumProtocol: string,
         proxyAddress: string, network: Network) {
         const call = new Call();
-        let procedure = new Procedure(1, 'server.version');
-        procedure.params.push(electrumProtocol);
-        procedure.params.push(electrumProtocol);
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(2, 'blockchain.headers.subscribe');
+        call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
+        let procedure = new Procedure(2, 'blockchain.headers.subscribe');
         call.procedureList.push(procedure.toString());
         procedure = new Procedure(3, 'blockchain.relayfee');
         call.procedureList.push(procedure.toString());
-        let i = 4;
+        procedure = new Procedure(4, 'blockchain.estimatefee');
+        procedure.params.push(1);
+        call.procedureList.push(procedure.toString());
+        let i = 5;
         derivedList.forEach(derived => {
             procedure = new Procedure(i, 'blockchain.scripthash.listunspent');
             procedure.params.push(derived.address.scriptHash(network));
@@ -79,8 +70,9 @@ export class SendService {
             responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
             const lastBlockHeight: number = responseList[1].result.height;
             const minimumRelayFeeInBtc = responseList[2].result;
+            const estimatefeeInBtc = responseList[3].result;
             let utxoArray = new Array<WsTransaction>();
-            for (let index = 3; index < responseList.length; index++) {
+            for (let index = 4; index < responseList.length; index++) {
                 const utxoList = responseList[index].result;
                 for (const item of utxoList) {
                     const utxo = new WsTransaction();
@@ -90,7 +82,7 @@ export class SendService {
                     utxo.height = item.height;
                     // TODO use big
                     utxo.amount = parseFloat(this.conversionService.satoshiToBitcoin(utxo.satoshis).toFixed(8));
-                    utxo.derived = derivedList[index - 3];
+                    utxo.derived = derivedList[index - 4];
                     if (utxo.height > 0) {
                         utxo.confirmations = lastBlockHeight - utxo.height + 1;
                     } else {
@@ -100,20 +92,17 @@ export class SendService {
                 }
                 utxoArray = utxoArray.filter((utxo: WsTransaction) => utxo.confirmations > 0);
             }
-            return { 'minimumRelayFeeInBtc': minimumRelayFeeInBtc, 'utxoArray': utxoArray };
+            return { 'minimumRelayFeeInBtc': minimumRelayFeeInBtc, estimatefeeInBtc, 'utxoArray': utxoArray };
         })));
     }
 
     rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumProtocol: string,
         proxyAddress: string) {
         const call = new Call();
-        let procedure = new Procedure(1, 'server.version');
-        procedure.params.push(electrumProtocol);
-        procedure.params.push(electrumProtocol);
-        call.procedureList.push(procedure.toString());
+        call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
         let i = 1;
         utxoArray.forEach(transaction => {
-            procedure = new Procedure(++i, 'blockchain.transaction.get');
+            let procedure = new Procedure(++i, 'blockchain.transaction.get');
             procedure.params.push(transaction.id);
             call.procedureList.push(procedure.toString());
         });
@@ -129,11 +118,8 @@ export class SendService {
     broadcast(transaction: string, electrumProtocol: string,
         proxyAddress: string) {
         const call = new Call();
-        let procedure = new Procedure(1, 'server.version');
-        procedure.params.push(electrumProtocol);
-        procedure.params.push(electrumProtocol);
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(2, 'blockchain.transaction.broadcast');
+        call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
+        let procedure = new Procedure(2, 'blockchain.transaction.broadcast');
         procedure.params.push(transaction);
         call.procedureList.push(procedure.toString());
         return this.httpClient.post<any[]>(proxyAddress + '/proxy', call);
@@ -143,11 +129,8 @@ export class SendService {
         electrumProtocol: string,
         proxyAddress: string, network: Network) {
         const call = new Call();
-        let procedure = new Procedure(1, 'server.version');
-        procedure.params.push(electrumProtocol);
-        procedure.params.push(electrumProtocol);
-        call.procedureList.push(procedure.toString());
-        procedure = new Procedure(2, 'blockchain.headers.subscribe');
+        call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
+        let procedure = new Procedure(2, 'blockchain.headers.subscribe');
         call.procedureList.push(procedure.toString());
         let i = 3;
         derivedList.forEach(derived => {
@@ -187,6 +170,13 @@ export class SendService {
             }
             return transactionArrayArray;
         }));
+    }
+
+    serverVersionProcedure(i: number, electrumProtocol: string) {
+        const procedure = new Procedure(i, 'server.version');
+        procedure.params.push(electrumProtocol);
+        procedure.params.push(electrumProtocol);
+        return procedure;
     }
 
 }

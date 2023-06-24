@@ -3,55 +3,23 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 export class Purpose {
 
     static from(extendedkey: string, network: bitcoinjs.Network) {
-        // TODO remove network validation
         const prefix = extendedkey.substring(0, 1);
-        let purpose;
-        switch (prefix) {
-            case 'x':
-                if (network === bitcoinjs.networks.bitcoin) {
-                    purpose = 44;
-                } else {
-                    throw new Error('Incompatible network');
-                }
-                break;
-            case 't':
-                if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
-                    purpose = 44;
-                } else {
-                    throw new Error('Incompatible network');
-                }
-                break;
-            case 'y':
-                if (network === bitcoinjs.networks.bitcoin) {
-                    purpose = 49;
-                } else {
-                    throw new Error('Incompatible network');
-                }
-                break;
-            case 'u':
-                if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
-                    purpose = 49;
-                } else {
-                    throw new Error('Incompatible network');
-                }
-                break;
-            case 'z':
-                if (network === bitcoinjs.networks.bitcoin) {
-                    purpose = 84;
-                } else {
-                    throw new Error('Incompatible network');
-                }
-                break;
-            case 'v':
-                if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
-                    purpose = 84;
-                } else {
-                    throw new Error('Incompatible network');
-                }
-                break;
-            default: throw new Error('Incompatible key');
+        const prefixDetailList = Purpose.prefixDetailListOf(network);
+        for (const prefixDetail of prefixDetailList) {
+            if (prefixDetail.prefix === prefix) {
+                return prefixDetail.purpose;
+            }
         }
-        return purpose;
+        throw new Error('Incompatible key');
+    }
+
+    static prefixDetailListOf(network: bitcoinjs.Network) {
+        if (network === bitcoinjs.networks.bitcoin) {
+            return [{ prefix: 'x', purpose: 86 }, { prefix: 'z', purpose: 84 }, { prefix: 'y', purpose: 49 }];
+        } else if (network === bitcoinjs.networks.testnet || network === bitcoinjs.networks.regtest) {
+            return [{ prefix: 't', purpose: 86 }, { prefix: 'v', purpose: 84 }, { prefix: 'u', purpose: 49 }];
+        }
+        throw new Error('Unknow network');
     }
 
 }

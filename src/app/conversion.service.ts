@@ -6,9 +6,7 @@ import { Big } from 'big.js';
 })
 export class ConversionService {
 
-    satoshiInBitcoin = 100000000
-
-    constructor() { }
+    static satoshiInBitcoin = 100000000;
 
     satoshiToBitcoinBig(satoshi: number): Big {
         return this.bigSatoshiToBitcoinBig(new Big(satoshi))
@@ -20,11 +18,11 @@ export class ConversionService {
     }
 
     bigSatoshiToBitcoinBig(satoshi: Big): Big {
-        return satoshi.div(this.satoshiInBitcoin)
+        return satoshi.div(ConversionService.satoshiInBitcoin)
     }
 
     bitcoinToSatoshiBig(bitcoin: number): Big {
-        return new Big(bitcoin).times(this.satoshiInBitcoin)
+        return new Big(bitcoin).times(ConversionService.satoshiInBitcoin)
     }
 
     bitcoinToSatoshi(bitcoin: number): number {

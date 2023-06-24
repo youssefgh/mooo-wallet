@@ -1,7 +1,7 @@
 
 export class Procedure {
 
-    params: string[] = new Array();
+    params = new Array();
 
     constructor(public id: number, public method: string) {}
 

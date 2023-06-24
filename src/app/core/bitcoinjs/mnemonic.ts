@@ -16,7 +16,7 @@ export class Mnemonic {
 
     matchsKey(key: string, network: bitcoinjs.Network) {
         try {
-            const purposeArray = [84, 49, 44];
+            const purposeArray = [86, 84, 49, 44];
             // TODO support other accounts
             const account = 0;
             for (const purpose of purposeArray) {

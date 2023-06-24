@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Big } from 'big.js';
 import * as coinSelect from 'coinselect/split';
@@ -6,8 +6,6 @@ import { EMPTY, Observable } from 'rxjs';
 import { expand } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
-import { Fee } from '../core/bitcoinfees/fee';
-import { FeeResponse } from '../core/bitcoinfees/fee-response';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { Network } from '../core/bitcoinjs/network';
@@ -45,12 +43,9 @@ export class SendComponent implements OnInit, AfterContentChecked {
 
     mnemonic = new Mnemonic;
 
-    minSelectableFee: number;
+    minSelectableFee: number = 1;
     maxSelectableFee: number;
     satoshiPerByte: number;
-    minimumEstimatedConfirmationTimeInMinute: number;
-    maximumEstimatedConfirmationTimeInMinute: number;
-    feeArray: Fee[];
 
     environment = environment;
 
@@ -70,8 +65,6 @@ export class SendComponent implements OnInit, AfterContentChecked {
     ) { }
 
     ngOnInit() {
-        this.loadFeeArray();
-
         const elem = this.qrModalRef.nativeElement;
         this.qrModal = M.Modal.init(elem, {});
     }
@@ -86,26 +79,6 @@ export class SendComponent implements OnInit, AfterContentChecked {
 
     onSourceQrScan(text: string) {
         this.from = text;
-    }
-
-    loadFeeArray() {
-        this.httpClient.get<FeeResponse>(environment.bitcoinfeesAddress,
-            { headers: new HttpHeaders() })
-            .subscribe(feeResponse => {
-                this.feeArray = feeResponse.fees;
-                this.minSelectableFee = 1;
-                this.maxSelectableFee = 500;
-                const defaultFee = this.sendService.feeForEstimatedConfirmationTime(60, this.feeArray);
-                this.satoshiPerByte = defaultFee.minFee;
-                if (this.satoshiPerByte > this.maxSelectableFee) {
-                    this.maxSelectableFee = this.satoshiPerByte;
-                }
-                this.minimumEstimatedConfirmationTimeInMinute = defaultFee.minMinutes;
-                this.maximumEstimatedConfirmationTimeInMinute = defaultFee.maxMinutes;
-            }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
-                console.error(error);
-            });
     }
 
     isFromValid() {
@@ -136,6 +109,10 @@ export class SendComponent implements OnInit, AfterContentChecked {
                             i++;
                         });
                         this.minimumRelayFeeInBtc = data.minimumRelayFeeInBtc;
+                        if (!this.satoshiPerByte) {
+                            this.satoshiPerByte = new Big(ConversionService.satoshiInBitcoin).mul(data.estimatefeeInBtc).toNumber();
+                            this.maxSelectableFee = this.satoshiPerByte + 10;
+                        }
                         this.utxoArray = data.utxoArray;
                         if (this.utxoArray.length === 0) {
                             M.toast({ html: 'This wallet doesn\'t have confirmed balance', classes: 'red' });
@@ -150,7 +127,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
             });
     }
 
-    loadUTXOFromKey(key) {
+    loadUTXOFromKey(key: string) {
         let fromIndex = 0;
         const gap = this.gap;
         let toIndex = gap;
@@ -210,13 +187,6 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     satoshiPerByteChanged() {
-        for (const feeItem of this.feeArray) {
-            if (feeItem.minFee <= this.satoshiPerByte && feeItem.maxFee >= this.satoshiPerByte) {
-                this.minimumEstimatedConfirmationTimeInMinute = feeItem.minMinutes;
-                this.maximumEstimatedConfirmationTimeInMinute = feeItem.maxMinutes;
-                break;
-            }
-        }
         // TODO remove dup
         const outputArray = [...this.outputArray];
         outputArray.push(new Output(this.changeOutput.destination, undefined));

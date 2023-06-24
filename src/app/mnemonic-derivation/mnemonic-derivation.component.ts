@@ -17,8 +17,6 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     environment = environment;
 
-    customDerivationPath = 'm/';
-    customDerivation = false;
     purpose: number;
     coinType: number;
     account = 0;
@@ -45,7 +43,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     ngOnInit() {
         this.coinType = HdCoin.id(environment.network);
-        this.setBIP(49);
+        this.setBIP(84);
 
         const elem = this.qrModalRef.nativeElement;
         this.qrModal = M.Modal.init(elem, {});
@@ -57,35 +55,19 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     setBIP(purpose) {
         this.purpose = purpose;
-        this.customDerivation = false;
     }
 
     derivationPath() {
         return 'm/' + this.purpose + '\'/' + this.coinType + '\'/' + this.account + '\'/' + this.change;
     }
 
-    setCustom() {
-        this.customDerivation = true;
-    }
-
     // TODO move to service
     derive() {
         const hdRoot = HdRoot.from(this.mnemonic, this.purpose, environment.network);
-        let finalNode;
-        if (this.customDerivation) {
-            try {
-                finalNode = hdRoot.derivePath(this.customDerivationPath);
-            } catch (e) {
-                M.toast({ html: 'Incorrect derivation path !', classes: 'red' });
-                console.error(e);
-                return;
-            }
-        } else {
-            const accountNode = hdRoot.deriveHardened(this.purpose).deriveHardened(this.coinType).deriveHardened(this.account);
-            this.xpub = accountNode.neutered().toBase58();
-            this.xpriv = accountNode.toBase58();
-            finalNode = accountNode.derive(this.change);
-        }
+        const accountNode = hdRoot.deriveHardened(this.purpose).deriveHardened(this.coinType).deriveHardened(this.account);
+        this.xpub = accountNode.neutered().toBase58();
+        this.xpriv = accountNode.toBase58();
+        let finalNode = accountNode.derive(this.change);
         this.derivedArray = Derivator.deriveList(this.purpose, finalNode, this.fromIndex, this.toIndex, environment.network);
         this.scrollTarget.nativeElement.scrollIntoView();
     }
