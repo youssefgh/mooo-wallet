@@ -29,7 +29,7 @@ export class BalanceService {
             call.procedureList.push(procedure.toString());
         });
         return this.httpClient.post<Array<string>>(proxyAddress + '/proxy', call)
-            .pipe(map(data => JsonRpcResponse.sortedList(data)))
+            .pipe(map(data => JsonRpcResponse.listFrom(data)))
             .toPromise();
     }
 
@@ -50,7 +50,7 @@ export class BalanceService {
             call.procedureList.push(procedure.toString());
         });
         return this.httpClient.post<Array<string>>(proxyAddress + '/proxy', call)
-            .pipe(map(data => JsonRpcResponse.sortedList(data)))
+            .pipe(map(data => JsonRpcResponse.listFrom(data)))
             .toPromise();
     }
 

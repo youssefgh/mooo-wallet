@@ -3,15 +3,15 @@
 <main>
     <div class="container">
         <div class="row">
-            <div class="input-field col s9 m7 center-align" [ngClass]="{'s12 m12': canSend()}">
+            <div class="input-field col s9 m7 center-align" [ngClass]="{'s12 m12': utxosAvailable()}">
                 <textarea id="source" class="materialize-textarea" [(ngModel)]="from"
-                    [ngClass]="{'valid': isFromValid()}" [disabled]="canSend()"></textarea>
+                    [ngClass]="{'valid': isFromValid()}" [disabled]="utxosAvailable()"></textarea>
                 <label for="source">Extended Public Key</label>
             </div>
-            <div *ngIf="!canSend()" class="col s3 m1" style="margin-top: 1rem">
+            <div *ngIf="!utxosAvailable()" class="col s3 m1" style="margin-top: 1rem">
                 <app-qr-code-reader (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
             </div>
-            <div *ngIf="!canSend()" class="col s12 m4 center-align" style="margin-top: 0.5rem">
+            <div *ngIf="!utxosAvailable()" class="col s12 m4 center-align" style="margin-top: 0.5rem">
                 <a class="waves-effect waves-light btn-large pulse" (click)="loadUTXO()">
                     <i class="material-icons left">system_update_alt</i>
                     Load
@@ -19,7 +19,7 @@
                 </a>
             </div>
         </div>
-        <div *ngIf="advancedMode && canSend() && !psbt" class="row">
+        <div *ngIf="advancedMode && utxosAvailable() && !psbt" class="row">
             <table class="responsive-table">
                 <thead>
                     <tr>
@@ -46,7 +46,7 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="canSend()" class="row center-align">
+        <div *ngIf="utxosAvailable()" class="row center-align">
             <div style="font-size: xx-large;">
                 Balance : <span class="blue lighten-4 blue-text text-lighten-2"
                     style="border-radius: 0.3rem; padding: 0.5rem">{{balance | btc}}&nbsp;{{environment.btc}}</span>

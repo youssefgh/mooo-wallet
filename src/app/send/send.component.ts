@@ -1,9 +1,7 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Big } from 'big.js';
 import * as coinSelect from 'coinselect/split';
-import { EMPTY, Observable } from 'rxjs';
-import { expand } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Derivator } from '../core/bitcoinjs/derivator';
@@ -60,7 +58,6 @@ export class SendComponent implements OnInit, AfterContentChecked {
 
     constructor(
         private conversionService: ConversionService,
-        private httpClient: HttpClient,
         private sendService: SendService
     ) { }
 
@@ -98,87 +95,75 @@ export class SendComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    loadUTXOFromList(derivedList: Array<Derived>) {
-        this.sendService.loadUTXO(derivedList, environment.electrumProtocol,
-            environment.proxyAddress, Network.from(environment.network)).subscribe(data => {
-                this.sendService.rawTransactionListFrom(data.utxoArray,
-                    environment.electrumProtocol, environment.proxyAddress).subscribe(rawTransactionArray => {
-                        let i = 0;
-                        data.utxoArray.forEach(transaction => {
-                            transaction.transactionHex = rawTransactionArray[i];
-                            i++;
-                        });
-                        this.minimumRelayFeeInBtc = data.minimumRelayFeeInBtc;
-                        if (!this.satoshiPerByte) {
-                            this.satoshiPerByte = new Big(ConversionService.satoshiInBitcoin).mul(data.estimatefeeInBtc).toNumber();
-                            this.maxSelectableFee = this.satoshiPerByte + 10;
-                        }
-                        this.utxoArray = data.utxoArray;
-                        if (this.utxoArray.length === 0) {
-                            M.toast({ html: 'This wallet doesn\'t have confirmed balance', classes: 'red' });
-                            return;
-                        }
-                        this.updateBalance();
-                    }, (error: HttpErrorResponse) => {
-                        M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
-                        M.toast({ html: 'Can\'t list unspent ! Error : ' + error.message, classes: 'red' });
-                        console.error(error);
-                    });
-            });
+    async loadUTXOFromList(derivedList: Array<Derived>) {
+        try {
+            const response = await this.sendService.loadUTXO(derivedList, environment.electrumProtocol,
+                environment.proxyAddress, Network.from(environment.network));
+            this.minimumRelayFeeInBtc = response.minimumRelayFeeInBtc;
+            if (!this.satoshiPerByte) {
+                this.satoshiPerByte = new Big(ConversionService.satoshiInBitcoin).mul(response.estimatefeeInBtc).toNumber();
+                this.maxSelectableFee = this.satoshiPerByte + 10;
+            }
+            this.utxoArray = response.utxoArray;
+            if (this.utxoArray.length === 0) {
+                M.toast({ html: 'This wallet doesn\'t have confirmed balance', classes: 'red' });
+                return;
+            }
+            this.updateBalance();
+        } catch (error) {
+            M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
+            M.toast({ html: 'Can\'t list unspent ! Error : ' + (error as HttpErrorResponse).message, classes: 'red' });
+            console.error(error);
+        }
     }
 
-    loadUTXOFromKey(key: string) {
-        let fromIndex = 0;
+    async loadUTXOFromKey(key: string) {
         const gap = this.gap;
-        let toIndex = gap;
-        let change = 0;
-        let repeat;
-        let derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
-        let lastUsedIndex = -1;
-        const usedDerivedList = new Array;
-        this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-            environment.proxyAddress, Network.from(environment.network)).pipe(expand((transactionArrayArray) => {
-                if (!repeat) {
-                    if (toIndex - lastUsedIndex >= gap) {
-                        if (change === 0) {
-                            change = 1;
-                            fromIndex = 0;
-                            toIndex = gap;
-                            lastUsedIndex = -1;
-                            // TODO check change gap
-                            // gap = 1
-                        } else {
-                            const changeAddress = Derivator.derive(key, change, lastUsedIndex + 1, lastUsedIndex + 2, environment.network)
-                            [0].address;
-                            this.changeOutput = new Output(changeAddress.value, undefined);
-                            this.loadUTXOFromList(usedDerivedList);
-                            return EMPTY;
+        let lastUsedChangeIndex = -1;
+        const usedDerivedList = new Array<Derived>();
+        try {
+            for (const change of [0, 1]) {
+                let fromIndex = -gap;
+                let toIndex = 0;
+                let lastUsedIndex = -1;
+                do {
+                    fromIndex += gap;
+                    toIndex += gap;
+                    let derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
+                    const historyArray =
+                        await this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
+                            environment.proxyAddress, Network.from(environment.network));
+                    for (let i = 0; i < historyArray.length; i++) {
+                        const history = historyArray[i];
+                        if (history.length > 0) {
+                            usedDerivedList.push(derivedList[i]);
+                            lastUsedIndex = fromIndex + i;
+                            if (change === 1) {
+                                lastUsedChangeIndex = lastUsedIndex;
+                            }
                         }
                     }
-                }
-                if (change !== 1 || lastUsedIndex !== -1) {
-                    fromIndex = toIndex;
-                    toIndex = lastUsedIndex + gap;
-                }
-                derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
-                return this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
-                    environment.proxyAddress, Network.from(environment.network));
-            })).subscribe(transactionArrayArray => {
-                repeat = false;
-                if (!(transactionArrayArray instanceof Observable)) {
-                    for (let index = 0; index < transactionArrayArray.length; index++) {
-                        const transactionArray = transactionArrayArray[index];
-                        if (transactionArray.length !== 0) {
-                            usedDerivedList.push(derivedList[index]);
-                            lastUsedIndex = fromIndex + index;
-                            repeat = true;
-                        }
-                    }
-                }
-            }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
-                console.error(error);
-            });
+                } while (fromIndex <= lastUsedIndex && lastUsedIndex < toIndex);
+            }
+            const changeAddress = Derivator.derive(key, 1, lastUsedChangeIndex + 1, lastUsedChangeIndex + 2, environment.network)
+            [0].address;
+            this.changeOutput = new Output(changeAddress.value, undefined);
+            this.loadUTXOFromList(usedDerivedList);
+        } catch (error) {
+            M.toast({ html: 'Error while getting the balance ! ' + (error as HttpErrorResponse).message, classes: 'red' });
+            console.error(error);
+        }
+    }
+
+    coinSelect(outputArray: Array<Output>) {
+        return coinSelect(
+            this.utxoArray.map((u) => {
+                return { txId: u.id, vout: u.vout, value: u.satoshis };
+            }),
+            outputArray.map((o) => {
+                return { address: o.destination, value: o.amount };
+            })
+            , this.satoshiPerByte);
     }
 
     removeUTXO(index: number) {
@@ -187,18 +172,10 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     satoshiPerByteChanged() {
-        // TODO remove dup
         const outputArray = [...this.outputArray];
         outputArray.push(new Output(this.changeOutput.destination, undefined));
 
-        const { inputs, outputs, fee } = coinSelect(
-            this.utxoArray.map((u) => {
-                return { txId: u.id, vout: u.vout, value: u.satoshis };
-            }),
-            outputArray.map((o) => {
-                return { address: o.destination, value: o.amount };
-            })
-            , this.satoshiPerByte);
+        const { outputs, fee } = this.coinSelect(outputArray);
         if (!outputs) {
             M.toast({ html: 'Insufficient balance ! reduce the  transaction fee', classes: 'red' });
             this.transactionFee = new Big(fee);
@@ -218,7 +195,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     addDestination() {
-        let selectedAmount;
+        let selectedAmount: number;
         try {
             selectedAmount = this.conversionService.bitcoinToSatoshi(this.selectedAmount);
             if (selectedAmount < 0) {
@@ -238,14 +215,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         outputArray.push(outputToAdd);
         outputArray.push(new Output(this.changeOutput.destination, undefined));
 
-        const { inputs, outputs, fee } = coinSelect(
-            this.utxoArray.map((u) => {
-                return { txId: u.id, vout: u.vout, value: u.satoshis };
-            }),
-            outputArray.map((o) => {
-                return { address: o.destination, value: o.amount };
-            })
-            , this.satoshiPerByte);
+        const { outputs, fee } = this.coinSelect(outputArray);
         if (!outputs) {
             M.toast({ html: 'The amount is too big ! reduce the amount to pay transaction fee', classes: 'red' });
             return;
@@ -269,14 +239,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         const outputArray = [...this.outputArray];
         outputArray.push(new Output(this.changeOutput.destination, undefined));
 
-        const { inputs, outputs, fee } = coinSelect(
-            this.utxoArray.map((u) => {
-                return { txId: u.id, vout: u.vout, value: u.satoshis };
-            }),
-            outputArray.map((o) => {
-                return { address: o.destination, value: o.amount };
-            })
-            , this.satoshiPerByte);
+        const { outputs, fee } = this.coinSelect(outputArray);
         if (outputs) {
             for (const output of outputs) {
                 if (output.address === this.changeOutput.destination) {
@@ -301,8 +264,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         this.totalAmountToSend = totalAmountToSend;
     }
 
-    // TODO rename
-    canSend() {
+    utxosAvailable() {
         return this.utxoArray.length > 0;
     }
 
@@ -327,27 +289,28 @@ export class SendComponent implements OnInit, AfterContentChecked {
         this.psbt.sign(this.mnemonic);
     }
 
-    broadcast() {
-        this.sendService.broadcast(this.psbt.signedTransaction,
-            environment.electrumProtocol, environment.proxyAddress).subscribe(data => {
-                let responseList = new Array<JsonRpcResponse>();
-                for (const responseString of data) {
-                    const responseObject = JsonRpcResponse.from(responseString);
-                    if (responseObject.error) {
-                        M.toast({ html: 'Sending error ! Tx: ' + responseObject.error.message, classes: 'red' });
-                        console.error(responseObject.error);
-                        return;
-                    }
-                    responseList.push(responseObject);
+    async broadcast() {
+        try {
+            const data = await this.sendService.broadcast(this.psbt.signedTransaction,
+                environment.electrumProtocol, environment.proxyAddress);
+            let responseList = new Array<JsonRpcResponse>();
+            for (const responseString of data) {
+                const responseObject = JsonRpcResponse.from(responseString);
+                if (responseObject.error) {
+                    M.toast({ html: 'Sending error ! Tx: ' + responseObject.error.message, classes: 'red' });
+                    console.error(responseObject.error);
+                    return;
                 }
-                responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
-                const response = responseList[1];
-                M.toast({ html: 'Sending complete ! Tx:' + response.result, classes: 'green' });
-                this.clear();
-            }, (error: HttpErrorResponse) => {
-                M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
-                console.error(error);
-            });
+                responseList.push(responseObject);
+            }
+            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
+            const response = responseList[1];
+            M.toast({ html: 'Sending complete ! Tx:' + response.result, classes: 'green' });
+            this.clear();
+        } catch (error) {
+            M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
+            console.error(error);
+        }
     }
 
     clear() {

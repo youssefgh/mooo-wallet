@@ -1,8 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Big } from 'big.js';
-import { throwError } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { ConversionService } from '../conversion.service';
 import { Network } from '../core/bitcoinjs/network';
 import { Derived } from '../core/derived';
@@ -28,19 +26,7 @@ export class SendService {
         return balance;
     }
 
-    // transactionFee(transaction: bitcoinjs.Transaction, utxoArray: Array<Transaction>, satoshiPerByte: number) {
-    //     let feeInSatoshi
-    //     if (utxoArray[0].derived.purpose == 49 || utxoArray[0].derived.purpose == 84) {
-    //         let virtualSize = transaction.virtualSize()
-    //         feeInSatoshi = virtualSize * satoshiPerByte
-    //     } else {
-    //         let byteLength = transaction.byteLength()
-    //         feeInSatoshi = byteLength * satoshiPerByte
-    //     }
-    //     return feeInSatoshi
-    // }
-
-    loadUTXO(derivedList: Array<Derived>, electrumProtocol: string,
+    async loadUTXO(derivedList: Array<Derived>, electrumProtocol: string,
         proxyAddress: string, network: Network) {
         const call = new Call();
         call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
@@ -58,45 +44,44 @@ export class SendService {
             call.procedureList.push(procedure.toString());
             i++;
         });
-        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call).pipe(map((data => {
-            let responseList = new Array<JsonRpcResponse>();
-            for (const responseString of data) {
-                const response = JsonRpcResponse.from(responseString);
-                if (response.error) {
-                    throwError(response.error);
+        const response = await this.httpClient.post<string[]>(proxyAddress + '/proxy', call).toPromise();
+        let responseList = JsonRpcResponse.listFrom(response);
+        const lastBlockHeight: number = responseList[1].result.height;
+        const minimumRelayFeeInBtc = responseList[2].result;
+        const estimatefeeInBtc = responseList[3].result;
+        let utxoArray = new Array<WsTransaction>();
+        for (let index = 4; index < responseList.length; index++) {
+            const utxoList = responseList[index].result;
+            for (const item of utxoList) {
+                const utxo = new WsTransaction();
+                utxo.id = item.tx_hash;
+                utxo.vout = item.tx_pos;
+                utxo.satoshis = item.value;
+                utxo.height = item.height;
+                // TODO use big
+                utxo.amount = parseFloat(this.conversionService.satoshiToBitcoin(utxo.satoshis).toFixed(8));
+                utxo.derived = derivedList[index - 4];
+                if (utxo.height > 0) {
+                    utxo.confirmations = lastBlockHeight - utxo.height + 1;
+                } else {
+                    utxo.confirmations = 0;
                 }
-                responseList.push(response);
+                utxoArray.push(utxo);
             }
-            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
-            const lastBlockHeight: number = responseList[1].result.height;
-            const minimumRelayFeeInBtc = responseList[2].result;
-            const estimatefeeInBtc = responseList[3].result;
-            let utxoArray = new Array<WsTransaction>();
-            for (let index = 4; index < responseList.length; index++) {
-                const utxoList = responseList[index].result;
-                for (const item of utxoList) {
-                    const utxo = new WsTransaction();
-                    utxo.id = item.tx_hash;
-                    utxo.vout = item.tx_pos;
-                    utxo.satoshis = item.value;
-                    utxo.height = item.height;
-                    // TODO use big
-                    utxo.amount = parseFloat(this.conversionService.satoshiToBitcoin(utxo.satoshis).toFixed(8));
-                    utxo.derived = derivedList[index - 4];
-                    if (utxo.height > 0) {
-                        utxo.confirmations = lastBlockHeight - utxo.height + 1;
-                    } else {
-                        utxo.confirmations = 0;
-                    }
-                    utxoArray.push(utxo);
-                }
-                utxoArray = utxoArray.filter((utxo: WsTransaction) => utxo.confirmations > 0);
-            }
-            return { 'minimumRelayFeeInBtc': minimumRelayFeeInBtc, estimatefeeInBtc, 'utxoArray': utxoArray };
-        })));
+            utxoArray = utxoArray.filter((utxo: WsTransaction) => utxo.confirmations > 0);
+        }
+
+        const rawTransactionArray = await this.rawTransactionListFrom(utxoArray,
+            electrumProtocol, proxyAddress);
+        let j = 0;
+        utxoArray.forEach(transaction => {
+            transaction.transactionHex = rawTransactionArray[j];
+            j++;
+        });
+        return { minimumRelayFeeInBtc, estimatefeeInBtc, utxoArray };
     }
 
-    rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumProtocol: string,
+    async rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumProtocol: string,
         proxyAddress: string) {
         const call = new Call();
         call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
@@ -106,13 +91,12 @@ export class SendService {
             procedure.params.push(transaction.id);
             call.procedureList.push(procedure.toString());
         });
-        return this.httpClient.post<string[]>(proxyAddress + '/proxy', call).pipe(map(data => {
-            data = data.map(d => JSON.parse(d))
-                .sort((a, b) => a.id > b.id ? 1 : -1)
-                .slice(1)
-                .map(d => d.result);
-            return data;
-        }));
+        let data = await this.httpClient.post<string[]>(proxyAddress + '/proxy', call).toPromise();
+        data = data.map(d => JSON.parse(d))
+            .sort((a, b) => a.id > b.id ? 1 : -1)
+            .slice(1)
+            .map(d => d.result);
+        return data;
     }
 
     broadcast(transaction: string, electrumProtocol: string,
@@ -122,10 +106,10 @@ export class SendService {
         let procedure = new Procedure(2, 'blockchain.transaction.broadcast');
         procedure.params.push(transaction);
         call.procedureList.push(procedure.toString());
-        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call);
+        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call).toPromise();
     }
 
-    loadHistoryFrom(derivedList: Array<Derived>,
+    async loadHistoryFrom(derivedList: Array<Derived>,
         electrumProtocol: string,
         proxyAddress: string, network: Network) {
         const call = new Call();
@@ -138,38 +122,27 @@ export class SendService {
             procedure.params.push(derived.address.scriptHash(network));
             call.procedureList.push(procedure.toString());
         });
-        return this.httpClient.post<Array<string>>(proxyAddress + '/proxy', call).pipe(map(data => {
-            let responseList = new Array<JsonRpcResponse>();
-            for (const responseString of data) {
-                const response = JsonRpcResponse.from(responseString);
-                if (response.error) {
-                    return throwError(response.error.message);
+        const response = await this.httpClient.post<Array<string>>(proxyAddress + '/proxy', call).toPromise();
+        let responseList = JsonRpcResponse.listFrom(response);
+        const lastBlockHeight: number = responseList[1].result.height;
+        const historyArray = new Array<Array<WsTransaction>>();
+        for (let index = 2; index < responseList.length; index++) {
+            const response = responseList[index];
+            const transactionArray = new Array<WsTransaction>();
+            for (const item of response.result.reverse()) {
+                const transaction = new WsTransaction;
+                transaction.id = item.tx_hash;
+                transaction.height = item.height;
+                if (transaction.height > 0) {
+                    transaction.confirmations = lastBlockHeight - transaction.height + 1;
+                } else {
+                    transaction.confirmations = 0;
                 }
-                responseList.push(response);
+                transactionArray.push(transaction);
             }
-            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
-            const lastBlockHeight: number = responseList[1].result.height;
-            const transactionArrayArray = new Array<Array<WsTransaction>>();
-            for (let index = 2; index < responseList.length; index++) {
-                const response = responseList[index];
-                const transactionArray = new Array<WsTransaction>();
-                for (const item of response.result.reverse()) {
-                    const transaction = new WsTransaction;
-                    transaction.inCount = 0;
-                    transaction.id = item.tx_hash;
-                    transaction.satoshis = 0;
-                    transaction.height = item.height;
-                    if (transaction.height > 0) {
-                        transaction.confirmations = lastBlockHeight - transaction.height + 1;
-                    } else {
-                        transaction.confirmations = 0;
-                    }
-                    transactionArray.push(transaction);
-                }
-                transactionArrayArray.push(transactionArray);
-            }
-            return transactionArrayArray;
-        }));
+            historyArray.push(transactionArray);
+        }
+        return historyArray;
     }
 
     serverVersionProcedure(i: number, electrumProtocol: string) {

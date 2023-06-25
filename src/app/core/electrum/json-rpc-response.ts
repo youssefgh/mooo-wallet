@@ -20,9 +20,9 @@ export class JsonRpcResponse {
         return jsonRpcResponse;
     }
 
-    static sortedList(data) {
-        const responseList = new Array<JsonRpcResponse>();
-        for (const responseString of data) {
+    static listFrom(stringResponseList: Array<string>) {
+        let responseList = new Array<JsonRpcResponse>();
+        for (const responseString of stringResponseList) {
             const response = JsonRpcResponse.from(responseString);
             responseList.push(response);
         }
