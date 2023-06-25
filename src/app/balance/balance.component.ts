@@ -1,14 +1,17 @@
 import { AfterContentChecked, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Big } from 'big.js';
+import { networks } from 'bitcoinjs-lib';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Address } from '../core/bitcoinjs/address';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Network } from '../core/bitcoinjs/network';
+import { Derived } from '../core/derived';
 import { GetBalanceResponse } from '../core/electrum/get-balance-response';
 import { GetHistoryResponseItem } from '../core/electrum/get-history-response-item';
 import { WsTransaction } from '../core/electrum/wsTransaction';
+import { LocalStorageService } from '../shared/local-storage.service';
 import { BalanceService } from './balance.service';
 
 declare const M: any;
@@ -22,6 +25,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
     source: string;
+    isLegacyAccount = false;
     gap = 20;
     confirmedBalance: string;
     unconfirmedBalance: string;
@@ -29,6 +33,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
 
     constructor(private balanceService: BalanceService,
         private conversionService: ConversionService,
+        private localStorageService: LocalStorageService,
         private route: ActivatedRoute,
         private router: Router,
     ) { }
@@ -61,8 +66,17 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         this.source = text;
     }
 
+    isPossibleLegacyAccount() {
+        return this.localStorageService.settings.bip44Enabled &&
+            this.source && (
+                (environment.network === networks.bitcoin && this.source.startsWith('xpub'))
+                || (environment.network === networks.testnet && this.source.startsWith('tpub'))
+                || (environment.network === networks.regtest && this.source.startsWith('tpub'))
+            );
+    }
+
     loadBalance() {
-        const prefix = this.source.substring(1, 3);
+        const prefix = this.source.substring(1, 4);
         let address;
         if (prefix !== 'pub') {
             address = this.source;
@@ -102,7 +116,13 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         try {
             do {
                 found = false;
-                addressList = Derivator.derive(this.source, change, fromIndex, fromIndex + this.gap, environment.network)
+                let derivedArray: Array<Derived>;
+                if (this.isLegacyAccount && this.isPossibleLegacyAccount()) {
+                    derivedArray = Derivator.deriveWithPurpose(this.source, 44, change, fromIndex, fromIndex + this.gap, environment.network);
+                } else {
+                    derivedArray = Derivator.derive(this.source, change, fromIndex, fromIndex + this.gap, environment.network);
+                }
+                addressList = derivedArray
                     .map(derived => {
                         return derived.address;
                     });
@@ -149,7 +169,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     }
 
     loadHistory() {
-        const prefix = this.source.substring(1, 3);
+        const prefix = this.source.substring(1, 4);
         let address;
         if (prefix !== 'pub') {
             address = this.source;

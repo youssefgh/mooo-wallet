@@ -4,6 +4,7 @@ import { networks } from 'bitcoinjs-lib';
 import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/derived';
+import { LocalStorageService } from '../shared/local-storage.service';
 
 declare const M: any;
 
@@ -36,7 +37,10 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     @ViewChild('scrollTarget', { static: true })
     scrollTarget: ElementRef;
 
-    constructor(private route: ActivatedRoute) { }
+    constructor(
+        private localStorageService: LocalStorageService,
+        private route: ActivatedRoute,
+    ) { }
 
     ngOnInit() {
         if (this.route.snapshot.queryParamMap.get('key') !== null) {
@@ -68,11 +72,12 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
     }
 
     isPossibleLegacyAccount() {
-        return this.key && (
-            (environment.network === networks.bitcoin && this.key.startsWith('xpub'))
-            || (environment.network === networks.testnet && this.key.startsWith('tpub'))
-            || (environment.network === networks.regtest && this.key.startsWith('tpub'))
-        );
+        return this.localStorageService.settings.bip44Enabled &&
+            this.key && (
+                (environment.network === networks.bitcoin && this.key.startsWith('xpub'))
+                || (environment.network === networks.testnet && this.key.startsWith('tpub'))
+                || (environment.network === networks.regtest && this.key.startsWith('tpub'))
+            );
     }
 
     deriveReceiving() {
@@ -89,10 +94,10 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
         if (change === undefined) {
             change = this.change;
         }
-        if (!this.isLegacyAccount) {
-            this.derivedArray = Derivator.derive(this.key, change, this.fromIndex, this.toIndex, environment.network);
-        } else {
+        if (this.isLegacyAccount && this.isPossibleLegacyAccount()) {
             this.derivedArray = Derivator.deriveWithPurpose(this.key, 44, change, this.fromIndex, this.toIndex, environment.network);
+        } else {
+            this.derivedArray = Derivator.derive(this.key, change, this.fromIndex, this.toIndex, environment.network);
         }
         this.scrollTarget.nativeElement.scrollIntoView();
     }

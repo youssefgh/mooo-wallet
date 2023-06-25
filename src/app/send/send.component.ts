@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Big } from 'big.js';
+import { networks } from 'bitcoinjs-lib';
 import * as coinSelect from 'coinselect/split';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
@@ -12,6 +13,7 @@ import { Derived } from '../core/derived';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
 import { WsTransaction } from '../core/electrum/wsTransaction';
 import { Output } from '../core/output';
+import { LocalStorageService } from '../shared/local-storage.service';
 import { SendService } from './send.service';
 
 declare const M: any;
@@ -27,6 +29,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     advancedMode = true;
 
     from: string;
+    isLegacyAccount = false;
     selectedDestination: string;
     selectedAmount: number;
     changeOutput: Output;
@@ -58,6 +61,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
 
     constructor(
         private conversionService: ConversionService,
+        private localStorageService: LocalStorageService,
         private sendService: SendService
     ) { }
 
@@ -87,6 +91,15 @@ export class SendComponent implements OnInit, AfterContentChecked {
         } catch (e) {
             return false;
         }
+    }
+
+    isPossibleLegacyAccount() {
+        return this.localStorageService.settings.bip44Enabled &&
+            this.from && (
+                (environment.network === networks.bitcoin && this.from.startsWith('xpub'))
+                || (environment.network === networks.testnet && this.from.startsWith('tpub'))
+                || (environment.network === networks.regtest && this.from.startsWith('tpub'))
+            );
     }
 
     loadUTXO() {
@@ -129,7 +142,12 @@ export class SendComponent implements OnInit, AfterContentChecked {
                 do {
                     fromIndex += gap;
                     toIndex += gap;
-                    let derivedList = Derivator.derive(key, change, fromIndex, toIndex, environment.network);
+                    let derivedList: Array<Derived>;
+                    if (this.isLegacyAccount && this.isPossibleLegacyAccount()) {
+                        derivedList = Derivator.deriveWithPurpose(key, 44, change, fromIndex, fromIndex + this.gap, environment.network);
+                    } else {
+                        derivedList = Derivator.derive(key, change, fromIndex, fromIndex + this.gap, environment.network);
+                    }
                     const historyArray =
                         await this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
                             environment.proxyAddress, Network.from(environment.network));

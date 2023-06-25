@@ -19,6 +19,15 @@
                 </a>
             </div>
         </div>
+        <div class="row" *ngIf="isPossibleLegacyAccount() && !utxosAvailable()">
+            <div class="center-align">
+                <label>
+                    <input type="checkbox" id="isLegacyAccount" [(ngModel)]="isLegacyAccount"
+                        [disabled]="utxosAvailable()" />
+                    <span for="isLegacyAccount">Legacy account</span>
+                </label>
+            </div>
+        </div>
         <div *ngIf="advancedMode && utxosAvailable() && !psbt" class="row">
             <table class="responsive-table">
                 <thead>

@@ -19,6 +19,7 @@ import { SendComponent } from './send/send.component';
 import { SideNavigationComponent } from './side-navigation/side-navigation.component';
 import { SpinnerInterceptor } from './spinner/spinner-interceptor';
 import { SpinnerComponent } from './spinner/spinner.component';
+import { SettingsComponent } from './settings/settings.component';
 
 
 @NgModule({
@@ -36,6 +37,7 @@ import { SpinnerComponent } from './spinner/spinner.component';
         QrCodeComponent,
         QrCodeReaderComponent,
         SpinnerComponent,
+        SettingsComponent,
     ],
     imports: [
         BrowserModule,

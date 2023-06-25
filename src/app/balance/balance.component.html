@@ -29,6 +29,15 @@
                 </a>
             </div>
         </div>
+        <div class="row" *ngIf="isPossibleLegacyAccount() && !confirmedBalance">
+            <div class="center-align">
+                <label>
+                    <input type="checkbox" id="isLegacyAccount" [(ngModel)]="isLegacyAccount"
+                        [disabled]="confirmedBalance" />
+                    <span for="isLegacyAccount">Legacy account</span>
+                </label>
+            </div>
+        </div>
         <div *ngIf="confirmedBalance">
             <div class="row">
                 <div class="col s12 center-align">

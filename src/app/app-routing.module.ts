@@ -1,12 +1,13 @@
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
 
-import { CreateWalletComponent } from './create-wallet/create-wallet.component';
-import { BalanceComponent } from './balance/balance.component';
-import { SendComponent } from './send/send.component';
 import { AboutComponent } from './about/about.component';
-import { MnemonicDerivationComponent } from './mnemonic-derivation/mnemonic-derivation.component';
+import { BalanceComponent } from './balance/balance.component';
+import { CreateWalletComponent } from './create-wallet/create-wallet.component';
 import { ExtendedKeyDerivationComponent } from './extended-key-derivation/extended-key-derivation.component';
+import { MnemonicDerivationComponent } from './mnemonic-derivation/mnemonic-derivation.component';
+import { SendComponent } from './send/send.component';
+import { SettingsComponent } from './settings/settings.component';
 
 const routes: Routes = [
     {
@@ -33,6 +34,10 @@ const routes: Routes = [
     {
         path: 'MnemonicDerivation',
         component: MnemonicDerivationComponent
+    },
+    {
+        path: 'Settings',
+        component: SettingsComponent
     },
     {
         path: 'About',
