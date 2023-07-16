@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { networks } from 'bitcoinjs-lib';
 import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
-import { Derived } from '../core/derived';
+import { Derived } from '../core/bitcoinjs/derived';
 import { LocalStorageService } from '../shared/local-storage.service';
 
 declare const M: any;
@@ -22,7 +22,6 @@ export class ExtendedKeyDerivationComponent implements OnInit, AfterContentCheck
 
     derivedArray: Array<Derived>;
 
-    // purpose: number
     change: number;
     fromIndex = 0;
     defaultTo = 10;

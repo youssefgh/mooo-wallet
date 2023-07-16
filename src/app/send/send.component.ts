@@ -6,13 +6,14 @@ import * as coinSelect from 'coinselect/split';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Derivator } from '../core/bitcoinjs/derivator';
+import { Derived } from '../core/bitcoinjs/derived';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { Network } from '../core/bitcoinjs/network';
+import { Output } from '../core/bitcoinjs/output';
 import { Psbt } from '../core/bitcoinjs/psbt';
-import { Derived } from '../core/derived';
+import { PsbtFactory } from '../core/bitcoinjs/psbt-factory';
+import { Utxo } from '../core/bitcoinjs/utxo';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
-import { WsTransaction } from '../core/electrum/wsTransaction';
-import { Output } from '../core/output';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { SendService } from './send.service';
 
@@ -34,10 +35,10 @@ export class SendComponent implements OnInit, AfterContentChecked {
     selectedAmount: number;
     changeOutput: Output;
     outputArray = new Array<Output>();
-    utxoArray = new Array<WsTransaction>();
+    utxoArray = new Array<Utxo>();
     minimumRelayFeeInBtc: number;
     psbt: Psbt;
-    // transactionHex: string;
+    base64: string;
     balance: Big;
     transactionFee: Big;
     totalAmountToSend: Big;
@@ -102,9 +103,9 @@ export class SendComponent implements OnInit, AfterContentChecked {
             );
     }
 
-    loadUTXO() {
+    async loadUTXO() {
         if (this.isFromValid()) {
-            this.loadUTXOFromKey(this.from);
+            await this.loadUTXOFromKey(this.from);
         }
     }
 
@@ -163,10 +164,9 @@ export class SendComponent implements OnInit, AfterContentChecked {
                     }
                 } while (fromIndex <= lastUsedIndex && lastUsedIndex < toIndex);
             }
-            const changeAddress = Derivator.derive(key, 1, lastUsedChangeIndex + 1, lastUsedChangeIndex + 2, environment.network)
-            [0].address;
-            this.changeOutput = new Output(changeAddress.value, undefined);
-            this.loadUTXOFromList(usedDerivedList);
+            const changeDerived = Derivator.derive(key, 1, lastUsedChangeIndex + 1, lastUsedChangeIndex + 2, environment.network)[0];
+            this.changeOutput = new Output(changeDerived.address.value, undefined, changeDerived);
+            await this.loadUTXOFromList(usedDerivedList);
         } catch (error) {
             M.toast({ html: 'Error while getting the balance ! ' + (error as HttpErrorResponse).message, classes: 'red' });
             console.error(error);
@@ -176,7 +176,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     coinSelect(outputArray: Array<Output>) {
         return coinSelect(
             this.utxoArray.map((u) => {
-                return { txId: u.id, vout: u.vout, value: u.satoshis };
+                return { txId: u.transaction.id, vout: u.vout, value: u.satoshis };
             }),
             outputArray.map((o) => {
                 return { address: o.destination, value: o.amount };
@@ -291,7 +291,8 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     createPsbt() {
-        this.psbt = Psbt.from(this.outputArray, this.changeOutput, this.utxoArray, environment.network);
+        this.psbt = PsbtFactory.create(this.outputArray, this.changeOutput, this.utxoArray, environment.network);
+        this.base64 = this.psbt.object.toBase64();
     }
 
     showQr(qr: string) {
@@ -337,7 +338,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
         this.selectedAmount = undefined;
         this.changeOutput = undefined;
         this.outputArray = new Array<Output>();
-        this.utxoArray = new Array<WsTransaction>();
+        this.utxoArray = new Array<Utxo>();
         this.psbt = undefined;
         this.balance = undefined;
 

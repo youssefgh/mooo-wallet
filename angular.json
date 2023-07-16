@@ -13,6 +13,7 @@
           "options": {
             "allowedCommonJsDependencies": [
               "@zxing/browser",
+              "base-x",
               "big.js",
               "bip32",
               "bip39",

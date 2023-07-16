@@ -2,12 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Big } from 'big.js';
 import { ConversionService } from '../conversion.service';
+import { Utxo } from '../core/bitcoinjs/utxo';
+import { ConfirmedTransaction } from '../core/bitcoinjs/confirmed-transaction';
+import { Derived } from '../core/bitcoinjs/derived';
 import { Network } from '../core/bitcoinjs/network';
-import { Derived } from '../core/derived';
 import { Call } from '../core/electrum/call';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
 import { Procedure } from '../core/electrum/procedure';
-import { WsTransaction } from '../core/electrum/wsTransaction';
 
 @Injectable({
     providedIn: 'root'
@@ -17,7 +18,7 @@ export class SendService {
     constructor(private httpClient: HttpClient,
         private conversionService: ConversionService) { }
 
-    calculateBalance(utxoArray: WsTransaction[]) {
+    calculateBalance(utxoArray: Utxo[]) {
         let balance = new Big(0);
         for (const utxo of utxoArray) {
             balance = balance.plus(utxo.satoshis);
@@ -49,26 +50,28 @@ export class SendService {
         const lastBlockHeight: number = responseList[1].result.height;
         const minimumRelayFeeInBtc = responseList[2].result;
         const estimatefeeInBtc = responseList[3].result;
-        let utxoArray = new Array<WsTransaction>();
+        let utxoArray = new Array<Utxo>();
         for (let index = 4; index < responseList.length; index++) {
             const utxoList = responseList[index].result;
             for (const item of utxoList) {
-                const utxo = new WsTransaction();
-                utxo.id = item.tx_hash;
+                const utxo = new Utxo();
+                const confirmedTransaction = new ConfirmedTransaction();
+                utxo.transaction = confirmedTransaction;
+                confirmedTransaction.id = item.tx_hash;
+                confirmedTransaction.height = item.height;
                 utxo.vout = item.tx_pos;
                 utxo.satoshis = item.value;
-                utxo.height = item.height;
                 // TODO use big
                 utxo.amount = parseFloat(this.conversionService.satoshiToBitcoin(utxo.satoshis).toFixed(8));
                 utxo.derived = derivedList[index - 4];
-                if (utxo.height > 0) {
-                    utxo.confirmations = lastBlockHeight - utxo.height + 1;
+                if (confirmedTransaction.height > 0) {
+                    confirmedTransaction.confirmations = lastBlockHeight - confirmedTransaction.height + 1;
                 } else {
-                    utxo.confirmations = 0;
+                    confirmedTransaction.confirmations = 0;
                 }
                 utxoArray.push(utxo);
             }
-            utxoArray = utxoArray.filter((utxo: WsTransaction) => utxo.confirmations > 0);
+            utxoArray = utxoArray.filter((utxo: Utxo) => utxo.transaction.confirmations > 0);
         }
 
         const rawTransactionArray = await this.rawTransactionListFrom(utxoArray,
@@ -81,14 +84,14 @@ export class SendService {
         return { minimumRelayFeeInBtc, estimatefeeInBtc, utxoArray };
     }
 
-    async rawTransactionListFrom(utxoArray: Array<WsTransaction>, electrumProtocol: string,
+    async rawTransactionListFrom(utxoArray: Array<Utxo>, electrumProtocol: string,
         proxyAddress: string) {
         const call = new Call();
         call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
         let i = 1;
-        utxoArray.forEach(transaction => {
+        utxoArray.forEach(utxo => {
             let procedure = new Procedure(++i, 'blockchain.transaction.get');
-            procedure.params.push(transaction.id);
+            procedure.params.push(utxo.transaction.id);
             call.procedureList.push(procedure.toString());
         });
         let data = await this.httpClient.post<string[]>(proxyAddress + '/proxy', call).toPromise();
@@ -125,12 +128,12 @@ export class SendService {
         const response = await this.httpClient.post<Array<string>>(proxyAddress + '/proxy', call).toPromise();
         let responseList = JsonRpcResponse.listFrom(response);
         const lastBlockHeight: number = responseList[1].result.height;
-        const historyArray = new Array<Array<WsTransaction>>();
+        const historyArray = new Array<Array<ConfirmedTransaction>>();
         for (let index = 2; index < responseList.length; index++) {
             const response = responseList[index];
-            const transactionArray = new Array<WsTransaction>();
+            const transactionArray = new Array<ConfirmedTransaction>();
             for (const item of response.result.reverse()) {
-                const transaction = new WsTransaction;
+                const transaction = new ConfirmedTransaction;
                 transaction.id = item.tx_hash;
                 transaction.height = item.height;
                 if (transaction.height > 0) {

@@ -1,10 +1,10 @@
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
-import { HdCoin } from '../core/bitcoinjs/hdCoin';
-import { HdRoot } from '../core/bitcoinjs/hdRoot';
+import { Derived } from '../core/bitcoinjs/derived';
+import { HdCoin } from '../core/bitcoinjs/hd-coin';
+import { HdRoot } from '../core/bitcoinjs/hd-root';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
-import { Derived } from '../core/derived';
 
 declare const M: any;
 

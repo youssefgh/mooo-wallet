@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { HdWallet } from '../core/bitcoinjs/hdWallet';
+import { HdWallet } from '../core/bitcoinjs/hd-wallet';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
-import { P2trWallet } from '../core/bitcoinjs/p2trWallet';
-import { P2wpkhInP2shWallet } from '../core/bitcoinjs/p2wpkhInP2shWallet';
-import { P2wpkhWallet } from '../core/bitcoinjs/p2wpkhWallet';
+import { P2trWallet } from '../core/bitcoinjs/p2tr-wallet';
+import { P2wpkhInP2shWallet } from '../core/bitcoinjs/p2wpkh-in-p2sh-wallet';
+import { P2wpkhWallet } from '../core/bitcoinjs/p2wpkh-wallet';
 
 @Component({
     selector: 'app-create-wallet',
@@ -15,7 +15,8 @@ export class CreateWalletComponent {
 
     environment = environment;
 
-    mnemonic = new Mnemonic;
+    mnemonic = new Mnemonic();
+    twentyFourWordsStrength = 256;
 
     wallet: HdWallet;
     encryptedKey: string;
@@ -24,18 +25,18 @@ export class CreateWalletComponent {
     walletType = 'taproot';
 
     newSegwitP2wpkhInP2sh() {
-        this.mnemonic.phrase = Mnemonic.new().phrase;
-        this.wallet = P2wpkhInP2shWallet.account0(this.mnemonic, this.environment.network);
+        this.mnemonic.phrase = Mnemonic.new(this.twentyFourWordsStrength).phrase;
+        this.wallet = P2wpkhInP2shWallet.account(this.mnemonic, 0, this.environment.network);
     }
 
     newP2wpkh() {
-        this.mnemonic.phrase = Mnemonic.new().phrase;
-        this.wallet = P2wpkhWallet.account0(this.mnemonic, this.environment.network);
+        this.mnemonic.phrase = Mnemonic.new(this.twentyFourWordsStrength).phrase;
+        this.wallet = P2wpkhWallet.account(this.mnemonic, 0, this.environment.network);
     }
 
     newP2tr() {
-        this.mnemonic.phrase = Mnemonic.new().phrase;
-        this.wallet = P2trWallet.account0(this.mnemonic, this.environment.network);
+        this.mnemonic.phrase = Mnemonic.new(this.twentyFourWordsStrength).phrase;
+        this.wallet = P2trWallet.account(this.mnemonic, 0, this.environment.network);
     }
 
     clean() {

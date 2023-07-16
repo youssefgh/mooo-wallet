@@ -1,11 +1,11 @@
 import { BIP32Interface } from 'bip32';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371';
-import { Bip32Utils } from '../bip32.utils';
-import { Derived } from '../derived';
 import { Address } from './address';
-import { Bip32Network } from './bip32Network';
-import { HdCoin } from './hdCoin';
+import { Bip32Network } from './bip32-network';
+import { Bip32Utils } from './bip32.utils';
+import { Derived } from './derived';
+import { HdCoin } from './hd-coin';
 import { Purpose } from './purpose';
 import { Wif } from './wif';
 

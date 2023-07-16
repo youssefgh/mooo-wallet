@@ -1,103 +1,65 @@
+import { PsbtInput } from 'bip174/src/lib/interfaces';
+import { BIP32Interface } from 'bip32';
 import * as bip39 from 'bip39';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { Bip32Utils } from '../bip32.utils';
-import { WsTransaction } from '../electrum/wsTransaction';
-import { Output } from '../output';
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371';
+import { Base43 } from './base43';
+import { Bip32Utils } from './bip32.utils';
 import { Mnemonic } from './mnemonic';
 
 export class Psbt {
 
-    base64: string;
     object: bitcoinjs.Psbt;
-    network: bitcoinjs.Network;
     signedTransaction: string;
 
-    static fromText(base64: string, network: bitcoinjs.Network) {
-        const instance = new Psbt;
-        instance.base64 = base64;
-        instance.network = network;
+    static fromBase64(base64: string, network: bitcoinjs.Network) {
+        const instance = new Psbt();
         instance.object = bitcoinjs.Psbt.fromBase64(base64, { network: network });
         return instance;
     }
 
-    // signPsbtHex(mnemonic: Mnemonic, network: bitcoinjs.Network) {
-    //     const psbt = bitcoinjs.Psbt.fromBase64(this.base64, { network: network });
-    //     return this.signPsbt(mnemonic, psbt, network);
-    // }
-
-
-    static from(outputArray: Output[], changeOutput: Output, utxoArray: WsTransaction[], network: bitcoinjs.Network) {
-        const instance = new Psbt;
-        const psbt = new bitcoinjs.Psbt({ network: network });
-        for (let i = 0; i < utxoArray.length; i++) {
-            const utxo = utxoArray[i];
-            const bip32Derivation = utxo.derived.bip32Derivation();
-            if (utxo.derived.purpose === 84) {
-                const transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex);
-                psbt.addInput({
-                    hash: utxo.id,
-                    index: utxo.vout,
-                    witnessUtxo: {
-                        script: transaction.outs[utxo.vout].script,
-                        value: utxo.satoshis
-                    },
-                    bip32Derivation: [
-                        bip32Derivation
-                    ]
-                });
-            } else if (utxo.derived.purpose === 49) {
-                const p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey: utxo.derived.publicKey, network: network });
-                const p2sh = bitcoinjs.payments.p2sh({ redeem: p2wpkh, network: network });
-                const transaction = bitcoinjs.Transaction.fromHex(utxo.transactionHex);
-                psbt.addInput({
-                    hash: utxo.id,
-                    index: utxo.vout,
-                    witnessUtxo: {
-                        script: transaction.outs[utxo.vout].script,
-                        value: utxo.satoshis
-                    },
-                    redeemScript: p2sh.redeem.output,
-                    bip32Derivation: [
-                        bip32Derivation
-                    ]
-                });
-            } else if (utxo.derived.purpose === 44) {
-                psbt.addInput({
-                    hash: utxo.id,
-                    index: utxo.vout,
-                    nonWitnessUtxo: Buffer.from(utxo.transactionHex, 'hex'),
-                    bip32Derivation: [
-                        bip32Derivation
-                    ]
-                });
-            } else {
-                throw new Error('Incompatible purpose ' + utxo.derived.purpose);
-            }
-        }
-        for (let i = 0; i < outputArray.length; i++) {
-            const output = outputArray[i];
-            psbt.addOutput({ address: output.destination, value: output.amount });
-        }
-        if (changeOutput.amount !== 0) {
-            psbt.addOutput({ address: changeOutput.destination, value: changeOutput.amount });
-        }
-        instance.object = psbt;
-        instance.base64 = psbt.toBase64();
+    static fromBase43(base43: string, network: bitcoinjs.Network) {
+        const decoded = Base43.decode(base43);
+        const instance = new Psbt();
+        instance.object = bitcoinjs.Psbt.fromBuffer(Buffer.from(decoded), { network: network });
         return instance;
     }
 
     sign(mnemonic: Mnemonic) {
         const seed = bip39.mnemonicToSeedSync(mnemonic.phrase, mnemonic.passphrase);
-        const hdRoot = Bip32Utils.instance.fromSeed(seed, this.network);
-        for (let index = 0; index < this.object.inputCount; index++) {
-            (this.object as any).data.inputs[index].bip32Derivation[0].masterFingerprint = hdRoot.fingerprint;
-        }
-        this.object.signAllInputsHD(hdRoot);
-        // if (!this.object.validateSignaturesOfAllInputs()) {
-        //     throw new Error('Invalid signature');
-        // }
+        const hdRoot = Bip32Utils.instance.fromSeed(seed);
+        this.signIndependently(hdRoot);
         this.object.finalizeAllInputs();
         this.signedTransaction = this.object.extractTransaction().toHex();
+    }
+
+    signAll(hdRoot: BIP32Interface) {
+        this.object.signAllInputsHD(hdRoot);
+    }
+
+    signIndependently(hdRoot: BIP32Interface) {
+        for (let i = 0; i < this.object.txInputs.length; i++) {
+            const path = this.firstBip32Derivation(this.object.data.inputs[i]).path;
+            const purpose = parseInt(path.split('/')[1].replace("'", ''));
+            let signerNode = hdRoot.derivePath(path);
+            let signer: bitcoinjs.Signer;
+            if (purpose === 86) {
+                const childNodeXOnlyPubkey = toXOnly(signerNode.publicKey);
+                signer = signerNode.tweak(
+                    bitcoinjs.crypto.taggedHash('TapTweak', childNodeXOnlyPubkey),
+                );
+            } else {
+                signer = signerNode;
+            }
+            this.object.signInput(i, signer);
+        }
+    }
+
+    firstBip32Derivation(psbtInput: PsbtInput) {
+        if (psbtInput.tapBip32Derivation) {
+            return psbtInput.tapBip32Derivation[0];
+        }
+        return psbtInput.bip32Derivation[0];
     }
 
 }

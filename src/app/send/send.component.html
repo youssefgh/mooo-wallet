@@ -39,13 +39,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let transaction of utxoArray; let i = index" [attr.data-index]="i">
-                        <td>{{transaction.satoshis | btc}}&nbsp;{{environment.btc}}</td>
-                        <td class="center">{{transaction.confirmations}}</td>
+                    <tr *ngFor="let utxo of utxoArray; let i = index" [attr.data-index]="i">
+                        <td>{{utxo.satoshis | btc}}&nbsp;{{environment.btc}}</td>
+                        <td class="center">{{utxo.transaction.confirmations}}</td>
                         <td class="hide-on-med-and-up" style="max-width: 140px"><span
-                                class="truncate">{{transaction.id}}</span></td>
-                        <td class="hide-on-small-and-down">{{transaction.id}}</td>
-                        <td>{{transaction.derived.address}}</td>
+                                class="truncate">{{utxo.transaction.id}}</span></td>
+                        <td class="hide-on-small-and-down">{{utxo.transaction.id}}</td>
+                        <td>{{utxo.derived.address}}</td>
                         <td>
                             <a class="waves-effect waves-light btn-floating secondary-content" (click)="removeUTXO(i)">
                                 <i class="material-icons">remove</i>
@@ -140,11 +140,11 @@
             <div class="col s9">
                 <label>Partially signed transaction</label>
                 <div style="word-wrap: break-word">
-                    {{psbt.base64}}
+                    {{base64}}
                 </div>
             </div>
             <div class="col s3">
-                <a class="waves-effect waves-light btn" (click)="showQr(psbt.base64)">QR</a>
+                <a class="waves-effect waves-light btn" (click)="showQr(base64)">QR</a>
             </div>
         </div>
         <div *ngIf="psbt && !psbt.signedTransaction" class="row">
@@ -168,7 +168,7 @@
                 </div>
             </div>
             <div class="col s3">
-                <a class="waves-effect waves-light btn" (click)="showQr(psbt.base64)">QR</a>
+                <a class="waves-effect waves-light btn" (click)="showQr(psbt.signedTransaction)">QR</a>
             </div>
         </div>
         <div *ngIf="psbt?.signedTransaction" class="row">
@@ -185,7 +185,7 @@
 </main>
 <div class="modal" style="width: 30vw; min-width: 300px" #qrModal>
     <div class="modal-content center-align">
-        <app-qr-code [value]="selectedQr" style="width: 100%"></app-qr-code>
+        <app-qr-code [value]="selectedQr"></app-qr-code>
     </div>
     <div class="modal-footer" style="text-align: center">
         <a class="modal-close waves-effect waves-green btn-flat">Close</a>

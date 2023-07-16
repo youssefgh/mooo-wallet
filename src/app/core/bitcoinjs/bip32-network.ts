@@ -2,7 +2,7 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 
 export class Bip32Network {
 
-    static from(purpose: number, network: bitcoinjs.Network) {
+    static from(purpose: number, network: bitcoinjs.Network): Bip32 {
         const mbip49 = {
             public: 0x049d7cb2,
             private: 0x049d7878
@@ -49,4 +49,9 @@ export class Bip32Network {
         return bip32Network;
     }
 
+}
+
+interface Bip32 {
+    public: number;
+    private: number;
 }

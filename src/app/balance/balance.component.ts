@@ -5,12 +5,12 @@ import { networks } from 'bitcoinjs-lib';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Address } from '../core/bitcoinjs/address';
+import { ConfirmedTransaction } from '../core/bitcoinjs/confirmed-transaction';
 import { Derivator } from '../core/bitcoinjs/derivator';
+import { Derived } from '../core/bitcoinjs/derived';
 import { Network } from '../core/bitcoinjs/network';
-import { Derived } from '../core/derived';
 import { GetBalanceResponse } from '../core/electrum/get-balance-response';
 import { GetHistoryResponseItem } from '../core/electrum/get-history-response-item';
-import { WsTransaction } from '../core/electrum/wsTransaction';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { BalanceService } from './balance.service';
 
@@ -29,7 +29,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     gap = 20;
     confirmedBalance: string;
     unconfirmedBalance: string;
-    transactionArray: WsTransaction[];
+    transactionArray: ConfirmedTransaction[];
 
     constructor(private balanceService: BalanceService,
         private conversionService: ConversionService,
@@ -192,17 +192,9 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
             return response.toGetHistoryResponse().filter(item => item.transactionHash);
         });
         const getHistoryResponse = partialGetHistoryResponseList[0];
-        this.transactionArray = getHistoryResponse.map(getHistoryResponseItem => {
-            const wsTransaction = new WsTransaction();
-            wsTransaction.id = getHistoryResponseItem.transactionHash;
-            wsTransaction.height = getHistoryResponseItem.height;
-            if (wsTransaction.height) {
-                wsTransaction.confirmations = headersResponse.height - wsTransaction.height + 1;
-            } else {
-                wsTransaction.confirmations = 0;
-            }
-            return wsTransaction;
-        }).sort((a, b) => a.confirmations > b.confirmations ? 1 : -1);
+        this.transactionArray = getHistoryResponse
+            .map(getHistoryResponseItem => this.confirmedTransactionOf(getHistoryResponseItem, headersResponse.height))
+            .sort((a, b) => a.confirmations > b.confirmations ? 1 : -1);
     }
 
     async loadHistoryFromExtendedKey() {
@@ -246,17 +238,8 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
                 }
             } while (found || fromIndex === 0);
 
-            this.transactionArray = getHistoryResponseItemList.map(getHistoryResponseItem => {
-                const wsTransaction = new WsTransaction();
-                wsTransaction.id = getHistoryResponseItem.transactionHash;
-                wsTransaction.height = getHistoryResponseItem.height;
-                if (wsTransaction.height) {
-                    wsTransaction.confirmations = headersResponse.height - wsTransaction.height + 1;
-                } else {
-                    wsTransaction.confirmations = 0;
-                }
-                return wsTransaction;
-            })
+            this.transactionArray = getHistoryResponseItemList
+                .map(getHistoryResponseItem => this.confirmedTransactionOf(getHistoryResponseItem, headersResponse.height))
                 .sort((a, b) => a.confirmations > b.confirmations ? 1 : -1)
                 .filter((value, index, self) => {
                     if (index !== 0) {
@@ -268,6 +251,18 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
             M.toast({ html: 'Error while getting the balance ! ' + error.message, classes: 'red' });
             console.error(error);
         }
+    }
+
+    confirmedTransactionOf(getHistoryResponseItem: GetHistoryResponseItem, height: number) {
+        const confirmedTransaction = new ConfirmedTransaction();
+        confirmedTransaction.id = getHistoryResponseItem.transactionHash;
+        confirmedTransaction.height = getHistoryResponseItem.height;
+        if (confirmedTransaction.height) {
+            confirmedTransaction.confirmations = height - confirmedTransaction.height + 1;
+        } else {
+            confirmedTransaction.confirmations = 0;
+        }
+        return confirmedTransaction;
     }
 
     clear() {
