@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Router } from '@angular/router';
 import { Big } from 'big.js';
 import { networks } from 'bitcoinjs-lib';
 import * as coinSelect from 'coinselect/split';
@@ -7,27 +8,23 @@ import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
-import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { Network } from '../core/bitcoinjs/network';
 import { Output } from '../core/bitcoinjs/output';
 import { Psbt } from '../core/bitcoinjs/psbt';
 import { PsbtFactory } from '../core/bitcoinjs/psbt-factory';
 import { Utxo } from '../core/bitcoinjs/utxo';
-import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
 import { LocalStorageService } from '../shared/local-storage.service';
-import { SendService } from './send.service';
+import { CreateTransactionService } from './create-transaction.service';
 
 declare const M: any;
 
 @Component({
-    selector: 'app-send',
-    templateUrl: './send.component.html',
-    styleUrls: ['./send.component.css'],
+    selector: 'app-create-transaction',
+    templateUrl: './create-transaction.component.html',
+    styleUrls: ['./create-transaction.component.css'],
     encapsulation: ViewEncapsulation.None
 })
-export class SendComponent implements OnInit, AfterContentChecked {
-
-    advancedMode = true;
+export class CreateTransactionComponent implements OnInit, AfterContentChecked {
 
     from: string;
     isLegacyAccount = false;
@@ -42,8 +39,6 @@ export class SendComponent implements OnInit, AfterContentChecked {
     balance: Big;
     transactionFee: Big;
     totalAmountToSend: Big;
-
-    mnemonic = new Mnemonic;
 
     minSelectableFee: number = 1;
     maxSelectableFee: number;
@@ -63,7 +58,8 @@ export class SendComponent implements OnInit, AfterContentChecked {
     constructor(
         private conversionService: ConversionService,
         private localStorageService: LocalStorageService,
-        private sendService: SendService
+        private service: CreateTransactionService,
+        private router: Router,
     ) { }
 
     ngOnInit() {
@@ -111,7 +107,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
 
     async loadUTXOFromList(derivedList: Array<Derived>) {
         try {
-            const response = await this.sendService.loadUTXO(derivedList, environment.electrumProtocol,
+            const response = await this.service.loadUTXO(derivedList, environment.electrumProtocol,
                 environment.proxyAddress, Network.from(environment.network));
             this.minimumRelayFeeInBtc = response.minimumRelayFeeInBtc;
             if (!this.satoshiPerByte) {
@@ -150,7 +146,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
                         derivedList = Derivator.derive(key, change, fromIndex, fromIndex + this.gap, environment.network);
                     }
                     const historyArray =
-                        await this.sendService.loadHistoryFrom(derivedList, environment.electrumProtocol,
+                        await this.service.loadHistoryFrom(derivedList, environment.electrumProtocol,
                             environment.proxyAddress, Network.from(environment.network));
                     for (let i = 0; i < historyArray.length; i++) {
                         const history = historyArray[i];
@@ -271,7 +267,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     updateBalance() {
-        this.balance = this.sendService.calculateBalance(this.utxoArray);
+        this.balance = this.service.calculateBalance(this.utxoArray);
     }
 
     updateTotalAmountToSend() {
@@ -301,35 +297,7 @@ export class SendComponent implements OnInit, AfterContentChecked {
     }
 
     signPsbt() {
-        if (!this.mnemonic.matchsKey(this.from, this.environment.network)) {
-            M.toast({ html: 'Signing error ! Mnemonic and/or passphrase doesn\'t match extended key', classes: 'red' });
-            return;
-        }
-        this.psbt.sign(this.mnemonic);
-    }
-
-    async broadcast() {
-        try {
-            const data = await this.sendService.broadcast(this.psbt.signedTransaction,
-                environment.electrumProtocol, environment.proxyAddress);
-            let responseList = new Array<JsonRpcResponse>();
-            for (const responseString of data) {
-                const responseObject = JsonRpcResponse.from(responseString);
-                if (responseObject.error) {
-                    M.toast({ html: 'Sending error ! Tx: ' + responseObject.error.message, classes: 'red' });
-                    console.error(responseObject.error);
-                    return;
-                }
-                responseList.push(responseObject);
-            }
-            responseList = responseList.sort((a, b) => a.id > b.id ? 1 : -1);
-            const response = responseList[1];
-            M.toast({ html: 'Sending complete ! Tx:' + response.result, classes: 'green' });
-            this.clear();
-        } catch (error) {
-            M.toast({ html: 'Error while connecting to the proxy server! please try again later', classes: 'red' });
-            console.error(error);
-        }
+        this.router.navigate(['./Sign'], { state: { data: this.base64 } });
     }
 
     clear() {
@@ -344,8 +312,6 @@ export class SendComponent implements OnInit, AfterContentChecked {
 
         this.transactionFee = undefined;
         this.totalAmountToSend = undefined;
-
-        this.mnemonic = new Mnemonic;
     }
 
 }

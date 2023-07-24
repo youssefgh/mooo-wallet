@@ -21,11 +21,9 @@
         <div class="row">
             <div class="center-align">
                 <a *ngIf="isSegwit() && (!usePassphrase || mnemonic.passphrase) && !wallet"
-                    class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
-                    (click)="newP2wpkh()">Generate</a>
+                    class="waves-effect waves-light btn-large" (click)="newP2wpkh()">Generate</a>
                 <a *ngIf="isTaproot() && (!usePassphrase || mnemonic.passphrase) && !wallet"
-                    class="waves-effect waves-light btn-large" [ngClass]="{'pulse': wallet == null}"
-                    (click)="newP2tr()">Generate</a>
+                    class="waves-effect waves-light btn-large" (click)="newP2tr()">Generate</a>
             </div>
         </div>
         <div *ngIf="wallet" class="row">

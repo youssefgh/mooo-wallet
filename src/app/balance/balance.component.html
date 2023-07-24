@@ -12,8 +12,7 @@
                 <app-qr-code-reader (scanned)="onQrScan($event)"></app-qr-code-reader>
             </div>
             <div class="col s12 xl4 center-align" style="margin-top: 0.5rem">
-                <a *ngIf="!confirmedBalance" class="waves-effect waves-light btn-large pulse"
-                    [ngClass]="{'pulse': source == null}" (click)="loadBalance()">
+                <a *ngIf="!confirmedBalance" class="waves-effect waves-light btn-large" (click)="loadBalance()">
                     <i class="material-icons left">system_update_alt</i>
                     Load
                 </a>

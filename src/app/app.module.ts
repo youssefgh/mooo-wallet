@@ -1,4 +1,4 @@
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -8,18 +8,20 @@ import { AboutComponent } from './about/about.component';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BalanceComponent } from './balance/balance.component';
+import { BroadcastComponent } from './broadcast/broadcast.component';
 import { BtcPipe } from './btc.pipe';
+import { CreateTransactionComponent } from './create-transaction/create-transaction.component';
 import { CreateWalletComponent } from './create-wallet/create-wallet.component';
 import { ExtendedKeyDerivationComponent } from './extended-key-derivation/extended-key-derivation.component';
 import { MnemonicDerivationComponent } from './mnemonic-derivation/mnemonic-derivation.component';
 import { NavigationBarComponent } from './navigation-bar/navigation-bar.component';
 import { QrCodeReaderComponent } from './qr-code-reader/qr-code-reader.component';
 import { QrCodeComponent } from './qr-code/qr-code.component';
-import { SendComponent } from './send/send.component';
+import { SettingsComponent } from './settings/settings.component';
 import { SideNavigationComponent } from './side-navigation/side-navigation.component';
+import { SignComponent } from './sign/sign.component';
 import { SpinnerInterceptor } from './spinner/spinner-interceptor';
 import { SpinnerComponent } from './spinner/spinner.component';
-import { SettingsComponent } from './settings/settings.component';
 
 
 @NgModule({
@@ -29,7 +31,7 @@ import { SettingsComponent } from './settings/settings.component';
         BalanceComponent,
         SideNavigationComponent,
         NavigationBarComponent,
-        SendComponent,
+        CreateTransactionComponent,
         AboutComponent,
         MnemonicDerivationComponent,
         ExtendedKeyDerivationComponent,
@@ -38,6 +40,8 @@ import { SettingsComponent } from './settings/settings.component';
         QrCodeReaderComponent,
         SpinnerComponent,
         SettingsComponent,
+        SignComponent,
+        BroadcastComponent,
     ],
     imports: [
         BrowserModule,

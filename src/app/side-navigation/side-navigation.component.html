@@ -1,32 +1,36 @@
 <ul id="slide-out" class="sidenav sidenav-fixed">
-    <li class="center-align" style="line-height: normal">
-        <div class="user-view"><img src="../assets/mooo.tech.svg" style="height: 5rem"/>
-            <h4>{{title}}</h4>
+  <li class="center-align" style="line-height: normal">
+    <div class="user-view"><img src="../assets/mooo.tech.svg" style="height: 5rem" />
+      <h4>{{title}}</h4>
+    </div>
+  </li>
+  <li><a routerLink="/CreateWallet"><i class="material-icons">create</i>Create Wallet</a></li>
+  <li><a routerLink="/Balance"><i class="material-icons">account_balance_wallet</i>Balance</a></li>
+  <li><a routerLink="/CreateTransaction"><i class="material-icons">payment</i>Create transaction</a></li>
+  <li><a routerLink="/Sign"><i class="material-icons">fingerprint</i>Sign</a></li>
+  <li><a routerLink="/Broadcast"><i class="material-icons">share</i>Broadcast</a></li>
+  <li class="no-padding">
+    <ul class="collapsible collapsible-accordion">
+      <li>
+        <a class="collapsible-header">Advanced<i class="material-icons">all_inclusive</i><i
+            class="material-icons right">arrow_drop_down</i></a>
+        <div class="collapsible-body">
+          <ul>
+            <li>
+              <a routerLink="/ExtendedKeyDerivation"><i class="material-icons">call_split</i>
+                Extended Key Derivation
+              </a>
+            </li>
+            <li>
+              <a routerLink="/MnemonicDerivation"><i class="material-icons">call_split</i>
+                Mnemonic Derivation
+              </a>
+            </li>
+          </ul>
         </div>
-    </li>
-    <li><a routerLink="/CreateWallet"><i class="material-icons">create</i>Create Wallet</a></li>
-    <li><a routerLink="/Balance"><i class="material-icons">account_balance_wallet</i>Balance</a></li>
-    <li><a routerLink="/Send"><i class="material-icons">payment</i>Send</a></li>
-      <li class="no-padding">
-        <ul class="collapsible collapsible-accordion">
-          <li>
-              <a class="collapsible-header">Advanced<i class="material-icons">all_inclusive</i><i class="material-icons right">arrow_drop_down</i></a>
-            <div class="collapsible-body">
-              <ul>
-                <li><a routerLink="/ExtendedKeyDerivation"><i class="material-icons">call_split</i>Extended Key Derivation</a></li>
-                <li><a routerLink="/MnemonicDerivation"><i class="material-icons">call_split</i>Mnemonic Derivation</a></li>
-              </ul>
-            </div>
-          </li>
-        </ul>
       </li>
-    <li><a routerLink="/Settings"><i class="material-icons">settings</i>Settings</a></li>
-    <li><a routerLink="/About"><i class="material-icons">info</i>About</a></li>
-    
-<!--    <li><div class="divider"></div></li>
-    <li><a class="subheader">Send</a></li>
-    <li><a class="bold" routerLink="/CreateTransaction"><i class="material-icons">payment</i>Create Transaction</a></li>
-    <li><a class="bold" routerLink="/PreviewTransaction"><i class="material-icons">view_headline</i>Preview Transaction</a></li>
-    <li><a class="bold" routerLink="/SignTransaction"><i class="material-icons">fingerprint</i>Sign Transaction</a></li>
-    <li><a class="bold" routerLink="/BroadcastTransaction"><i class="material-icons">rss_feed</i>Broadcast Transaction</a></li>-->
+    </ul>
+  </li>
+  <li><a routerLink="/Settings"><i class="material-icons">settings</i>Settings</a></li>
+  <li><a routerLink="/About"><i class="material-icons">info</i>About</a></li>
 </ul>

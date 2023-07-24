@@ -13,7 +13,7 @@ import { Procedure } from '../core/electrum/procedure';
 @Injectable({
     providedIn: 'root'
 })
-export class SendService {
+export class CreateTransactionService {
 
     constructor(private httpClient: HttpClient,
         private conversionService: ConversionService) { }
@@ -100,16 +100,6 @@ export class SendService {
             .slice(1)
             .map(d => d.result);
         return data;
-    }
-
-    broadcast(transaction: string, electrumProtocol: string,
-        proxyAddress: string) {
-        const call = new Call();
-        call.procedureList.push(this.serverVersionProcedure(1, electrumProtocol).toString());
-        let procedure = new Procedure(2, 'blockchain.transaction.broadcast');
-        procedure.params.push(transaction);
-        call.procedureList.push(procedure.toString());
-        return this.httpClient.post<any[]>(proxyAddress + '/proxy', call).toPromise();
     }
 
     async loadHistoryFrom(derivedList: Array<Derived>,
