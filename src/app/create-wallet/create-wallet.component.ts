@@ -1,17 +1,18 @@
-import { Component } from '@angular/core';
+import { AfterContentChecked, Component } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HdWallet } from '../core/bitcoinjs/hd-wallet';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { P2trWallet } from '../core/bitcoinjs/p2tr-wallet';
-import { P2wpkhInP2shWallet } from '../core/bitcoinjs/p2wpkh-in-p2sh-wallet';
 import { P2wpkhWallet } from '../core/bitcoinjs/p2wpkh-wallet';
+
+declare const M: any;
 
 @Component({
     selector: 'app-create-wallet',
     templateUrl: './create-wallet.component.html',
     styleUrls: ['./create-wallet.component.css'],
 })
-export class CreateWalletComponent {
+export class CreateWalletComponent implements AfterContentChecked {
 
     environment = environment;
 
@@ -23,11 +24,6 @@ export class CreateWalletComponent {
 
     usePassphrase: boolean;
     walletType = 'taproot';
-
-    newSegwitP2wpkhInP2sh() {
-        this.mnemonic.phrase = Mnemonic.new(this.twentyFourWordsStrength).phrase;
-        this.wallet = P2wpkhInP2shWallet.account(this.mnemonic, 0, this.environment.network);
-    }
 
     newP2wpkh() {
         this.mnemonic.phrase = Mnemonic.new(this.twentyFourWordsStrength).phrase;
@@ -53,6 +49,14 @@ export class CreateWalletComponent {
 
     isTaproot() {
         return this.walletType === 'taproot';
+    }
+
+    ngAfterContentChecked() {
+        M.updateTextFields();
+        const elements = document.getElementsByClassName('materialize-textarea') as HTMLCollectionOf<HTMLElement>;
+        for (const element of elements) {
+            M.textareaAutoResize(element);
+        }
     }
 
 }

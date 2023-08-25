@@ -1,34 +1,24 @@
-<app-navigation-bar header="Extended Key Derivation"></app-navigation-bar>
+<app-navigation-bar header="Descriptor Derivation"></app-navigation-bar>
 
 <main>
     <div class="container">
         <div class="row center-align">
             <div class="col s10 xl11 input-field">
-                <textarea id="key" class="materialize-textarea" [(ngModel)]="key"></textarea>
-                <label for="key">Extended Key</label>
+                <textarea id="key" class="materialize-textarea" [(ngModel)]="descriptor"></textarea>
+                <label for="key">Descriptor</label>
             </div>
             <div class="col s2 xl1 file-field input-field">
                 <app-qr-code-reader (scanned)="onQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
-        <div class="row" *ngIf="isPossibleLegacyAccount()">
+        <div class="row">
             <div class="center-align">
-                <label>
-                    <input type="checkbox" id="isLegacyAccount" [(ngModel)]="isLegacyAccount" />
-                    <span for="isLegacyAccount">Legacy account</span>
-                </label>
+                <a class="waves-effect waves-light btn-large" (click)="deriveReceiving()">Derive Receiving Addresses</a>
             </div>
         </div>
         <div class="row">
             <div class="center-align">
-                <a class="waves-effect waves-light btn-large"
-                    (click)="deriveReceiving()">Derive Receiving Addresses</a>
-            </div>
-        </div>
-        <div class="row">
-            <div class="center-align">
-                <a class="waves-effect waves-light btn-large"
-                    (click)="deriveChange()">Derive Change Addresses</a>
+                <a class="waves-effect waves-light btn-large" (click)="deriveChange()">Derive Change Addresses</a>
             </div>
         </div>
         <div class="row">

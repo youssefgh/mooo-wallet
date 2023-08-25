@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Big } from 'big.js';
 import { ConversionService } from '../conversion.service';
-import { Utxo } from '../core/bitcoinjs/utxo';
 import { ConfirmedTransaction } from '../core/bitcoinjs/confirmed-transaction';
 import { Derived } from '../core/bitcoinjs/derived';
 import { Network } from '../core/bitcoinjs/network';
+import { Utxo } from '../core/bitcoinjs/utxo';
 import { Call } from '../core/electrum/call';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
 import { Procedure } from '../core/electrum/procedure';
@@ -61,8 +61,6 @@ export class CreateTransactionService {
                 confirmedTransaction.height = item.height;
                 utxo.vout = item.tx_pos;
                 utxo.satoshis = item.value;
-                // TODO use big
-                utxo.amount = parseFloat(this.conversionService.satoshiToBitcoin(utxo.satoshis).toFixed(8));
                 utxo.derived = derivedList[index - 4];
                 if (confirmedTransaction.height > 0) {
                     confirmedTransaction.confirmations = lastBlockHeight - confirmedTransaction.height + 1;

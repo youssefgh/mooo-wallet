@@ -1,0 +1,86 @@
+<app-navigation-bar header="Multisig Derivation"></app-navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row center-align">
+            <div class="col s12 input-field">
+                <input id="account" type="number" min="0" [(ngModel)]="account">
+                <label for="account">Account</label>
+            </div>
+            <div class="col s12 input-field">
+                <input id="change" type="number" min="0" max="1" [(ngModel)]="change">
+                <label for="change">Change</label>
+            </div>
+            <ng-container>
+                <div class="col s12 input-field">
+                    <input id="script" type="number" min="0" max="2" [(ngModel)]="script" readonly>
+                    <label for="script">Script</label>
+                </div>
+                <div class="col s12">
+                    <p class="range-field">
+                        <input type="range" id="keyNumber" min="1" max="10" [(ngModel)]="keyNumber"
+                            (change)="descriptorKeyListUpdate()" />
+                        <label for="threshold">Keys: {{keyNumber}}</label>
+                    </p>
+                </div>
+                <ng-container *ngFor="let key of descriptorKeyList;let i = index">
+                    <div class="col s12 input-field">
+                        <input id="key{{i}}" [ngModel]="key" />
+                        <label class="active" for="key{{i}}">Key {{i+1}}</label>
+                    </div>
+                </ng-container>
+                <div class="col s12">
+                    <p class="range-field">
+                        <input type="range" id="threshold" min="1" [max]="keyNumber" [(ngModel)]="threshold" />
+                        <label for="threshold">Threshold: {{threshold}}</label>
+                    </p>
+                </div>
+            </ng-container>
+        </div>
+        <div class="row">
+            <div class="center-align">
+                <a class="waves-effect waves-light btn-large" (click)="deriveMultisig()">Derive multisig</a>
+            </div>
+        </div>
+        <div *ngIf="derivedArray && derivedArray.length !== 0" class="row center-align">
+            <div class="col s12 input-field">
+                <textarea id="descriptor" class="materialize-textarea" [(ngModel)]="descriptor"></textarea>
+                <label for="descriptor">Descriptor (Account {{account}})</label>
+            </div>
+        </div>
+        <div class="row">
+            <table *ngIf="derivedArray && derivedArray.length !== 0" class="highlight centered responsive-table">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let derived of derivedArray; let i = index">
+                        <td>{{i}}</td>
+                        <td>{{derived.address}}</td>
+                        <td>
+                            <a class="waves-effect waves-light btn" (click)="showQr(derived.address.value)">QR</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="center-align">
+                <a *ngIf="derivedArray" class="waves-effect waves-light btn" (click)="more()">More</a>
+            </div>
+        </div>
+        <div #scrollTarget></div>
+    </div>
+</main>
+<div class="modal" style="width: 30vw; min-width: 280px" #qrModal>
+    <div class="modal-content center-align">
+        <app-qr-code [value]="selectedQr" style="width: 180px"></app-qr-code>
+        <p style="font-size: smaller">{{selectedQr}}</p>
+    </div>
+    <div class="modal-footer" style="text-align: center">
+        <a class="modal-close waves-effect waves-green btn-flat">Close</a>
+    </div>
+</div>

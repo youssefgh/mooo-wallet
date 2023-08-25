@@ -25,6 +25,7 @@ export class BroadcastComponent implements AfterContentChecked {
         const extras = this.router.getCurrentNavigation().extras;
         if (extras.state?.data) {
             this.signedTransaction = extras.state.data;
+            this.broadcast();
         }
     }
 

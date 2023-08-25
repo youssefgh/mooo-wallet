@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "ng serve --poll=2000 --port 4201",
     "build": "ng build --configuration production",
-    "test": "ng test",
+    "test": "ts-node --project test/config/tsconfig.json ./node_modules/jasmine/bin/jasmine.js --config=test/config/jasmine.json",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "tslint": "tslint -t json -o tmp/tslint/report.json --project ."

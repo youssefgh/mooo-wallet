@@ -6,51 +6,56 @@ import { BalanceComponent } from './balance/balance.component';
 import { BroadcastComponent } from './broadcast/broadcast.component';
 import { CreateTransactionComponent } from './create-transaction/create-transaction.component';
 import { CreateWalletComponent } from './create-wallet/create-wallet.component';
-import { ExtendedKeyDerivationComponent } from './extended-key-derivation/extended-key-derivation.component';
+import { DescriptorDerivationComponent } from './descriptor-derivation/descriptor-derivation.component';
 import { MnemonicDerivationComponent } from './mnemonic-derivation/mnemonic-derivation.component';
+import { MultisigDerivationComponent } from './multisig-derivation/multisig-derivation.component';
 import { SettingsComponent } from './settings/settings.component';
 import { SignComponent } from './sign/sign.component';
 
 const routes: Routes = [
     {
         path: '',
-        redirectTo: '/CreateWallet',
+        redirectTo: '/create-wallet',
         pathMatch: 'full'
     },
     {
-        path: 'CreateWallet',
+        path: 'create-wallet',
         component: CreateWalletComponent
     },
     {
-        path: 'Balance',
+        path: 'balance',
         component: BalanceComponent
     },
     {
-        path: 'CreateTransaction',
+        path: 'create-transaction',
         component: CreateTransactionComponent
     },
     {
-        path: 'Sign',
+        path: 'sign',
         component: SignComponent
     },
     {
-        path: 'Broadcast',
+        path: 'broadcast',
         component: BroadcastComponent
     },
     {
-        path: 'ExtendedKeyDerivation',
-        component: ExtendedKeyDerivationComponent
+        path: 'descriptor-derivation',
+        component: DescriptorDerivationComponent
     },
     {
-        path: 'MnemonicDerivation',
+        path: 'multisig-derivation',
+        component: MultisigDerivationComponent
+    },
+    {
+        path: 'mnemonic-derivation',
         component: MnemonicDerivationComponent
     },
     {
-        path: 'Settings',
+        path: 'settings',
         component: SettingsComponent
     },
     {
-        path: 'About',
+        path: 'about',
         component: AboutComponent
     }
 ];

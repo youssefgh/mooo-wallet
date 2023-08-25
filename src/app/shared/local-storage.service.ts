@@ -28,9 +28,6 @@ export class LocalStorageService {
 
 class Settings {
 
-    bip44Enabled = false;
-    purposeArray = [86, 84, 49];
     gapLimit = 20;
-    accountGapLimit = 10;
 
 }

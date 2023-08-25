@@ -1,16 +1,18 @@
 import { AfterContentChecked, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Big } from 'big.js';
-import { networks } from 'bitcoinjs-lib';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Address } from '../core/bitcoinjs/address';
+import { Bip32Utils } from '../core/bitcoinjs/bip32.utils';
 import { ConfirmedTransaction } from '../core/bitcoinjs/confirmed-transaction';
 import { Derivator } from '../core/bitcoinjs/derivator';
-import { Derived } from '../core/bitcoinjs/derived';
+import { HdCoin } from '../core/bitcoinjs/hd-coin';
 import { Network } from '../core/bitcoinjs/network';
 import { GetBalanceResponse } from '../core/electrum/get-balance-response';
 import { GetHistoryResponseItem } from '../core/electrum/get-history-response-item';
+import { OutputDescriptor } from '../core/output-descriptor';
+import { OutputDescriptorKey } from '../core/output-descriptor-key';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { BalanceService } from './balance.service';
 
@@ -25,8 +27,6 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
     source: string;
-    isLegacyAccount = false;
-    gap = 20;
     confirmedBalance: string;
     unconfirmedBalance: string;
     transactionArray: ConfirmedTransaction[];
@@ -40,18 +40,29 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
 
     ngOnInit() {
         if (this.route.snapshot.queryParamMap.get('source') !== null) {
-            this.source = this.route.snapshot.queryParamMap.get('source');
+            this.source = this.descriptorFrom(this.route.snapshot.queryParamMap.get('source'));
             this.loadBalance();
-            if (this.source.substring(1, 4) === 'priv') {
-                M.toast({
-                    html: 'You wrote the private key in your browser address bar, ' +
-                        'which means it is now probably stored in your browser history !' +
-                        'Please send all the funds associated with this key to a new wallet and never use this key again.' +
-                        'Or immediately delete your browser history and make sure your computer is free from malwares',
-                    classes: 'red', displayLength: 9000000000
-                });
-            }
         }
+    }
+
+    descriptorFrom(source: string) {
+        if (source.substring(1, 4) === 'pub') {
+            const extendedkeyDetails = Bip32Utils.extendedkeyDetailsFromBase58Sip(source, environment.network);
+            const hdCoin = HdCoin.id(environment.network)
+            const outputDescriptorKey = new OutputDescriptorKey();
+            outputDescriptorKey.fingerprint = 'FFFFFFFF';
+            outputDescriptorKey.derivation = `/${extendedkeyDetails.purpose}'/${hdCoin}'/0'`;
+            outputDescriptorKey.value = extendedkeyDetails.extendedkey;
+            const outputDescriptor = new OutputDescriptor();
+            outputDescriptor.script = OutputDescriptor.scriptFromPurpose(extendedkeyDetails.purpose);
+            outputDescriptor.key = outputDescriptorKey;
+            M.toast({
+                html: 'SIP exended key adapted to output descriptor !',
+                classes: 'orange', displayLength: 10000
+            });
+            return outputDescriptor.toString();
+        }
+        return source;
     }
 
     ngAfterContentChecked() {
@@ -66,23 +77,11 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         this.source = text;
     }
 
-    isPossibleLegacyAccount() {
-        return this.localStorageService.settings.bip44Enabled &&
-            this.source && (
-                (environment.network === networks.bitcoin && this.source.startsWith('xpub'))
-                || (environment.network === networks.testnet && this.source.startsWith('tpub'))
-                || (environment.network === networks.regtest && this.source.startsWith('tpub'))
-            );
-    }
-
     loadBalance() {
-        const prefix = this.source.substring(1, 4);
-        let address;
-        if (prefix !== 'pub') {
-            address = this.source;
-            this.loadBalanceFromAddress(address);
+        if (!this.source.includes('(')) {
+            this.loadBalanceFromAddress(this.source);
         } else {
-            this.loadBalanceFromExtendedKey();
+            this.loadBalanceFromDescriptor();
         }
     }
 
@@ -106,7 +105,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    async loadBalanceFromExtendedKey() {
+    async loadBalanceFromDescriptor() {
         let addressList: Array<Address>;
         let fromIndex = 0;
         let change = 0;
@@ -116,12 +115,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         try {
             do {
                 found = false;
-                let derivedArray: Array<Derived>;
-                if (this.isLegacyAccount && this.isPossibleLegacyAccount()) {
-                    derivedArray = Derivator.deriveWithPurpose(this.source, 44, change, fromIndex, fromIndex + this.gap, environment.network);
-                } else {
-                    derivedArray = Derivator.derive(this.source, change, fromIndex, fromIndex + this.gap, environment.network);
-                }
+                let derivedArray = Derivator.derive(this.source, change, fromIndex, fromIndex + this.localStorageService.settings.gapLimit, environment.network);
                 addressList = derivedArray
                     .map(derived => {
                         return derived.address;
@@ -139,7 +133,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
                     }
                 }
                 getBalanceResponseList = getBalanceResponseList.concat(partialGetBalanceResponseList);
-                fromIndex = fromIndex + this.gap;
+                fromIndex = fromIndex + this.localStorageService.settings.gapLimit;
 
                 if (!found && change === 0) {
                     change = 1;
@@ -169,13 +163,10 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     }
 
     loadHistory() {
-        const prefix = this.source.substring(1, 4);
-        let address;
-        if (prefix !== 'pub') {
-            address = this.source;
-            this.loadHistoryFromAddress(address);
+        if (!this.source.includes('(')) {
+            this.loadHistoryFromAddress(this.source);
         } else {
-            this.loadHistoryFromExtendedKey();
+            this.loadHistoryFromDescriptor();
         }
     }
 
@@ -197,7 +188,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
             .sort((a, b) => a.confirmations > b.confirmations ? 1 : -1);
     }
 
-    async loadHistoryFromExtendedKey() {
+    async loadHistoryFromDescriptor() {
         let addressList: Array<Address>;
         let fromIndex = 0;
         let change = 0;
@@ -208,7 +199,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         try {
             do {
                 found = false;
-                addressList = Derivator.derive(this.source, change, fromIndex, fromIndex + this.gap, environment.network)
+                addressList = Derivator.derive(this.source, change, fromIndex, fromIndex + this.localStorageService.settings.gapLimit, environment.network)
                     .map(derived => {
                         return derived.address;
                     });
@@ -230,7 +221,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
                     getHistoryResponseItemList = getHistoryResponseItemList.concat(getHistoryResponse);
                 }
 
-                fromIndex = fromIndex + this.gap;
+                fromIndex = fromIndex + this.localStorageService.settings.gapLimit;
 
                 if (!found && change === 0) {
                     change = 1;

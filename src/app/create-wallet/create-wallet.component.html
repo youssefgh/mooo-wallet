@@ -3,12 +3,12 @@
 <main>
     <div class="container">
         <div class="row center-align">
-            <div *ngIf="!wallet" class="col s12">
-                <label class="col s4 offset-s2 m2 offset-m4">
+            <div *ngIf="!wallet">
+                <label class="col s4 offset-s2">
                     <input name="walletType" type="radio" [value]="'segwit'" [(ngModel)]="walletType" />
                     <span>Segwit</span>
                 </label>
-                <label class="col s4 m2">
+                <label class="col s4">
                     <input name="walletType" type="radio" [value]="'taproot'" [(ngModel)]="walletType" />
                     <span>Taproot</span>
                 </label>
@@ -28,17 +28,19 @@
         </div>
         <div *ngIf="wallet" class="row">
             <div class="center-align">
-                <a class="btn waves-effect waves-light" [routerLink]="['/ExtendedKeyDerivation']"
-                    [queryParams]="{key: wallet.xpub}">
+                <a class="btn waves-effect waves-light" [routerLink]="['/descriptor-derivation']"
+                    [queryParams]="{descriptor: wallet.outputDescriptor}">
                     <i class="material-icons right">send</i>
-                    Addresses from extended public key
+                    Addresses from descriptor
                 </a>
             </div>
         </div>
         <div *ngIf="wallet" class="row">
             <div class="input-field">
-                <input id="xpub" value="{{wallet.xpub}}" readonly />
-                <label for="xpub" class="active">Extended public key</label>
+                <textarea id="outputDescriptor" class="materialize-textarea" [(ngModel)]="wallet.outputDescriptor"
+                    readonly>
+                </textarea>
+                <label for="outputDescriptor" class="active">Descriptor</label>
             </div>
         </div>
         <div *ngIf="wallet" class="row">

@@ -3,24 +3,28 @@ import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
 import { HdCoin } from '../core/bitcoinjs/hd-coin';
-import { Mnemonic } from '../core/bitcoinjs/mnemonic';
+import { OutputDescriptor } from '../core/output-descriptor';
+import { OutputDescriptorKey } from '../core/output-descriptor-key';
 
 declare const M: any;
 
 @Component({
-    selector: 'app-mnemonic-derivation',
-    templateUrl: './mnemonic-derivation.component.html',
-    styleUrls: ['./mnemonic-derivation.component.css']
+    selector: 'app-multisig-derivation',
+    templateUrl: './multisig-derivation.component.html',
+    styleUrls: ['./multisig-derivation.component.css']
 })
-export class MnemonicDerivationComponent implements OnInit, AfterContentChecked {
+export class MultisigDerivationComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
 
-    purpose: number;
+    purpose = 48;
     coinType: number;
     account = 0;
     change = 0;
     script = 2;
+    keyNumber = 2;
+    descriptorKeyList = new Array<string>;
+    threshold = 1;
     fromIndex = 0;
     defaultTo = 10;
     toIndex = this.defaultTo;
@@ -28,12 +32,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     @ViewChild('scrollTarget', { static: true })
     scrollTarget: ElementRef;
 
-    mnemonic = new Mnemonic();
-
-    privateDescriptorKey: string;
-    publicDescriptorKey: string;
-    privateDescriptor: string;
-    publicDescriptor: string;
+    descriptor: string;
 
     derivedArray: Array<Derived>;
 
@@ -45,7 +44,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     ngOnInit() {
         this.coinType = HdCoin.id(environment.network);
-        this.setBIP(84);
+        this.descriptorKeyListUpdate();
 
         const elem = this.qrModalRef.nativeElement;
         this.qrModal = M.Modal.init(elem, {});
@@ -59,24 +58,24 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
         }
     }
 
-    setBIP(purpose) {
-        this.purpose = purpose;
+    descriptorKeyListUpdate() {
+        this.descriptorKeyList.length = this.keyNumber;
     }
 
-    derive() {
-        const deriveListFromMnemonicResult = Derivator.deriveListFromMnemonic(this.mnemonic, this.purpose, this.coinType, this.account, this.script, this.change, this.fromIndex, this.toIndex, environment.network);
-        this.publicDescriptorKey = deriveListFromMnemonicResult.publicDescriptorKey;
-        this.privateDescriptorKey = deriveListFromMnemonicResult.privateDescriptorKey;
-        this.publicDescriptor = deriveListFromMnemonicResult.publicDescriptor;
-        this.privateDescriptor = deriveListFromMnemonicResult.privateDescriptor;
-        this.derivedArray = deriveListFromMnemonicResult.derivedArray;
+    deriveMultisig() {
+        const outputDescriptor = new OutputDescriptor();
+        outputDescriptor.script = 'wsh';
+        outputDescriptor.threshold = this.threshold;
+        outputDescriptor.sortedmultiParamList = this.descriptorKeyList.map(descriptorKey => OutputDescriptorKey.from(descriptorKey));
+        this.descriptor = outputDescriptor.toString();
+        this.derivedArray = Derivator.derive(this.descriptor, this.change, this.fromIndex, this.toIndex, environment.network);
 
         this.scrollTarget.nativeElement.scrollIntoView();
     }
 
     more() {
         this.toIndex += this.defaultTo;
-        this.derive();
+        this.deriveMultisig();
     }
 
     showQr(qr: string) {

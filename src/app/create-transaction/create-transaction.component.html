@@ -3,10 +3,15 @@
 <main>
     <div class="container">
         <div class="row valign-wrapper">
-            <div class="input-field col s9 m10 l11 xl11">
-                <textarea id="source" class="materialize-textarea" [(ngModel)]="from"
+            <div *ngIf="!utxosAvailable()" class="input-field col s9 m10 l11 xl11">
+                <textarea id="descriptor" class="materialize-textarea" [(ngModel)]="descriptor"
                     [ngClass]="{'valid': isFromValid()}" [disabled]="utxosAvailable()"></textarea>
-                <label for="source">Extended Public Key</label>
+                <label for="descriptor">Descriptor</label>
+            </div>
+            <div *ngIf="utxosAvailable()" class="input-field col s12 m12 l12 xl12">
+                <textarea id="descriptor" class="materialize-textarea" [(ngModel)]="descriptor"
+                    [ngClass]="{'valid': isFromValid()}" [disabled]="utxosAvailable()"></textarea>
+                <label for="descriptor">Descriptor</label>
             </div>
             <div *ngIf="!utxosAvailable()" class="col s3 m2 l1 xl1" style="margin-top: 1rem">
                 <app-qr-code-reader (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
@@ -17,15 +22,6 @@
                 <i class="material-icons left">system_update_alt</i>
                 Load
             </a>
-        </div>
-        <div class="row" *ngIf="isPossibleLegacyAccount() && !utxosAvailable()">
-            <div class="center-align">
-                <label>
-                    <input type="checkbox" id="isLegacyAccount" [(ngModel)]="isLegacyAccount"
-                        [disabled]="utxosAvailable()" />
-                    <span for="isLegacyAccount">Legacy account</span>
-                </label>
-            </div>
         </div>
         <div *ngIf="utxosAvailable() && !psbt" class="row">
             <table class="responsive-table">
@@ -136,13 +132,13 @@
             </div>
         </div>
         <div *ngIf="psbt" class="row valign-wrapper">
-            <div class="col s9">
+            <div class="col s9 m10 l11 xl11">
                 <label>Partially signed transaction</label>
                 <div style="word-wrap: break-word">
                     {{base64}}
                 </div>
             </div>
-            <div class="col s3">
+            <div class="col s3 m2 l1 xl1">
                 <a class="waves-effect waves-light btn" (click)="showQr(base64)">QR</a>
             </div>
         </div>

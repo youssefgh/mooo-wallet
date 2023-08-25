@@ -16,14 +16,14 @@ export class SettingsComponent {
     ) {
     }
 
-    get bip44Enabled() {
-        return this.localStorageService.settings.bip44Enabled;
-    }
+    // get bip44Enabled() {
+    //     return this.localStorageService.settings.bip44Enabled;
+    // }
 
-    @Input()
-    set bip44Enabled(bip44Enabled: boolean) {
-        this.localStorageService.settings.bip44Enabled = bip44Enabled;
-        this.localStorageService.saveSettings();
-    }
+    // @Input()
+    // set bip44Enabled(bip44Enabled: boolean) {
+    //     this.localStorageService.settings.bip44Enabled = bip44Enabled;
+    //     this.localStorageService.saveSettings();
+    // }
 
 }

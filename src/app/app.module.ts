@@ -12,8 +12,9 @@ import { BroadcastComponent } from './broadcast/broadcast.component';
 import { BtcPipe } from './btc.pipe';
 import { CreateTransactionComponent } from './create-transaction/create-transaction.component';
 import { CreateWalletComponent } from './create-wallet/create-wallet.component';
-import { ExtendedKeyDerivationComponent } from './extended-key-derivation/extended-key-derivation.component';
+import { DescriptorDerivationComponent } from './descriptor-derivation/descriptor-derivation.component';
 import { MnemonicDerivationComponent } from './mnemonic-derivation/mnemonic-derivation.component';
+import { MultisigDerivationComponent } from './multisig-derivation/multisig-derivation.component';
 import { NavigationBarComponent } from './navigation-bar/navigation-bar.component';
 import { QrCodeReaderComponent } from './qr-code-reader/qr-code-reader.component';
 import { QrCodeComponent } from './qr-code/qr-code.component';
@@ -34,7 +35,8 @@ import { SpinnerComponent } from './spinner/spinner.component';
         CreateTransactionComponent,
         AboutComponent,
         MnemonicDerivationComponent,
-        ExtendedKeyDerivationComponent,
+        DescriptorDerivationComponent,
+        MultisigDerivationComponent,
         BtcPipe,
         QrCodeComponent,
         QrCodeReaderComponent,

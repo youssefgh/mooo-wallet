@@ -4,11 +4,11 @@
       <h4>{{title}}</h4>
     </div>
   </li>
-  <li><a routerLink="/CreateWallet"><i class="material-icons">create</i>Create Wallet</a></li>
-  <li><a routerLink="/Balance"><i class="material-icons">account_balance_wallet</i>Balance</a></li>
-  <li><a routerLink="/CreateTransaction"><i class="material-icons">payment</i>Create transaction</a></li>
-  <li><a routerLink="/Sign"><i class="material-icons">fingerprint</i>Sign</a></li>
-  <li><a routerLink="/Broadcast"><i class="material-icons">share</i>Broadcast</a></li>
+  <li><a routerLink="/create-wallet"><i class="material-icons">create</i>Create Wallet</a></li>
+  <li><a routerLink="/balance"><i class="material-icons">account_balance_wallet</i>Balance</a></li>
+  <li><a routerLink="/create-transaction"><i class="material-icons">payment</i>Create transaction</a></li>
+  <li><a routerLink="/sign"><i class="material-icons">fingerprint</i>Sign</a></li>
+  <li><a routerLink="/broadcast"><i class="material-icons">share</i>Broadcast</a></li>
   <li class="no-padding">
     <ul class="collapsible collapsible-accordion">
       <li>
@@ -17,12 +17,17 @@
         <div class="collapsible-body">
           <ul>
             <li>
-              <a routerLink="/ExtendedKeyDerivation"><i class="material-icons">call_split</i>
-                Extended Key Derivation
+              <a routerLink="/descriptor-derivation"><i class="material-icons">call_split</i>
+                Descriptor Derivation
               </a>
             </li>
             <li>
-              <a routerLink="/MnemonicDerivation"><i class="material-icons">call_split</i>
+              <a routerLink="/multisig-derivation"><i class="material-icons">call_split</i>
+                Multisig Derivation
+              </a>
+            </li>
+            <li>
+              <a routerLink="/mnemonic-derivation"><i class="material-icons">call_split</i>
                 Mnemonic Derivation
               </a>
             </li>
@@ -31,6 +36,6 @@
       </li>
     </ul>
   </li>
-  <li><a routerLink="/Settings"><i class="material-icons">settings</i>Settings</a></li>
-  <li><a routerLink="/About"><i class="material-icons">info</i>About</a></li>
+  <!-- <li><a routerLink="/settings"><i class="material-icons">settings</i>Settings</a></li> -->
+  <li><a routerLink="/about"><i class="material-icons">info</i>About</a></li>
 </ul>

@@ -38,13 +38,7 @@ export class Bip32Network {
                     bip32Network = tbip84;
                 }
                 break;
-            case 86:
-                bip32Network = network.bip32;
-                break;
-            default: throw new Error('Incompatible purpose');
-        }
-        if (!bip32Network) {
-            throw new Error('Incompatible network');
+            default: bip32Network = network.bip32;
         }
         return bip32Network;
     }

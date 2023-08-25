@@ -6,9 +6,7 @@ export class Utxo {
     transaction: ConfirmedTransaction;
     vout: number;
     satoshis: number;
-    amount: number;
     derived: Derived;
-    inCount: number;
     transactionHex: string;
 
 }

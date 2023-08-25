@@ -10,7 +10,6 @@ import { Mnemonic } from './mnemonic';
 export class Psbt {
 
     object: bitcoinjs.Psbt;
-    signedTransaction: string;
 
     static fromBase64(base64: string, network: bitcoinjs.Network) {
         const instance = new Psbt();
@@ -25,41 +24,78 @@ export class Psbt {
         return instance;
     }
 
-    sign(mnemonic: Mnemonic) {
+    sign(mnemonic: Mnemonic): SignResult {
+        let signedTransaction: string;
+        let psbtBase64: string;
         const seed = bip39.mnemonicToSeedSync(mnemonic.phrase, mnemonic.passphrase);
         const hdRoot = Bip32Utils.instance.fromSeed(seed);
-        this.signIndependently(hdRoot);
-        this.object.finalizeAllInputs();
-        this.signedTransaction = this.object.extractTransaction().toHex();
-    }
+        const signResult = this.signIndependently(hdRoot);
+        if (signResult.signedCount === 0) {
+            return null;
+        }
+        if (signResult.finalizedInputsCount === this.object.txInputs.length) {
+            signedTransaction = this.object.extractTransaction().toHex();
 
-    signAll(hdRoot: BIP32Interface) {
-        this.object.signAllInputsHD(hdRoot);
+        } else {
+            psbtBase64 = this.object.toBase64();
+        }
+        return { signedTransaction, psbtBase64 };
     }
 
     signIndependently(hdRoot: BIP32Interface) {
+        let signedCount = 0;
+        let finalizedInputsCount = 0;
         for (let i = 0; i < this.object.txInputs.length; i++) {
-            const path = this.firstBip32Derivation(this.object.data.inputs[i]).path;
-            const purpose = parseInt(path.split('/')[1].replace("'", ''));
-            let signerNode = hdRoot.derivePath(path);
-            let signer: bitcoinjs.Signer;
-            if (purpose === 86) {
-                const childNodeXOnlyPubkey = toXOnly(signerNode.publicKey);
-                signer = signerNode.tweak(
-                    bitcoinjs.crypto.taggedHash('TapTweak', childNodeXOnlyPubkey),
-                );
-            } else {
-                signer = signerNode;
+            const input = this.object.data.inputs[i];
+            const bip32DerivationList = this.bip32Derivation(input);
+            let treshold: number;
+            if (bip32DerivationList.length > 1) {
+                const p2ms = bitcoinjs.payments.p2ms({ output: input.witnessScript });
+                treshold = p2ms.m;
             }
-            this.object.signInput(i, signer);
+            for (const bip32Derivation of bip32DerivationList) {
+                if (treshold && input.partialSig?.length === treshold) {
+                    if (!input.finalScriptSig && !input.finalScriptWitness) {
+                        this.object.finalizeInput(i);
+                        finalizedInputsCount++;
+                    }
+                    break;
+                }
+                if (hdRoot.fingerprint.equals(bip32Derivation.masterFingerprint)) {
+                    const path = bip32Derivation.path;
+                    const purpose = parseInt(path.split('/')[1].replace("'", ''));
+                    let signerNode = hdRoot.derivePath(path);
+                    let signer: bitcoinjs.Signer;
+                    if (purpose === 86) {
+                        const childNodeXOnlyPubkey = toXOnly(signerNode.publicKey);
+                        signer = signerNode.tweak(
+                            bitcoinjs.crypto.taggedHash('TapTweak', childNodeXOnlyPubkey),
+                        );
+                    } else {
+                        signer = signerNode;
+                    }
+                    this.object.signInput(i, signer);
+                    signedCount++;
+                    if (!treshold) {
+                        this.object.finalizeInput(i);
+                        finalizedInputsCount++;
+                    }
+                }
+            }
         }
+        return { signedCount, finalizedInputsCount };
     }
 
-    firstBip32Derivation(psbtInput: PsbtInput) {
+    bip32Derivation(psbtInput: PsbtInput) {
         if (psbtInput.tapBip32Derivation) {
-            return psbtInput.tapBip32Derivation[0];
+            return psbtInput.tapBip32Derivation;
         }
-        return psbtInput.bip32Derivation[0];
+        return psbtInput.bip32Derivation;
     }
 
+}
+
+export interface SignResult {
+    signedTransaction: string;
+    psbtBase64: string;
 }

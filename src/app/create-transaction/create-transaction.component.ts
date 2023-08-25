@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { Big } from 'big.js';
-import { networks } from 'bitcoinjs-lib';
 import * as coinSelect from 'coinselect/split';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
@@ -26,8 +25,7 @@ declare const M: any;
 })
 export class CreateTransactionComponent implements OnInit, AfterContentChecked {
 
-    from: string;
-    isLegacyAccount = false;
+    descriptor: string;
     selectedDestination: string;
     selectedAmount: number;
     changeOutput: Output;
@@ -45,9 +43,6 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     satoshiPerByte: number;
 
     environment = environment;
-
-    // TODO move to settings
-    gap = 20;
 
     selectedQr: string;
     qrModal;
@@ -76,32 +71,23 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     }
 
     onSourceQrScan(text: string) {
-        this.from = text;
+        this.descriptor = text;
     }
 
     isFromValid() {
         const account = 0;
         const change = 0;
         try {
-            Derivator.derive(this.from, change, account, 1, environment.network);
+            Derivator.derive(this.descriptor, change, account, 1, environment.network);
             return true;
         } catch (e) {
             return false;
         }
     }
 
-    isPossibleLegacyAccount() {
-        return this.localStorageService.settings.bip44Enabled &&
-            this.from && (
-                (environment.network === networks.bitcoin && this.from.startsWith('xpub'))
-                || (environment.network === networks.testnet && this.from.startsWith('tpub'))
-                || (environment.network === networks.regtest && this.from.startsWith('tpub'))
-            );
-    }
-
     async loadUTXO() {
         if (this.isFromValid()) {
-            await this.loadUTXOFromKey(this.from);
+            await this.loadUTXOFromKey(this.descriptor);
         }
     }
 
@@ -128,7 +114,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     }
 
     async loadUTXOFromKey(key: string) {
-        const gap = this.gap;
+        const gap = this.localStorageService.settings.gapLimit;
         let lastUsedChangeIndex = -1;
         const usedDerivedList = new Array<Derived>();
         try {
@@ -139,12 +125,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
                 do {
                     fromIndex += gap;
                     toIndex += gap;
-                    let derivedList: Array<Derived>;
-                    if (this.isLegacyAccount && this.isPossibleLegacyAccount()) {
-                        derivedList = Derivator.deriveWithPurpose(key, 44, change, fromIndex, fromIndex + this.gap, environment.network);
-                    } else {
-                        derivedList = Derivator.derive(key, change, fromIndex, fromIndex + this.gap, environment.network);
-                    }
+                    let derivedList = Derivator.derive(key, change, fromIndex, fromIndex + gap, environment.network);
                     const historyArray =
                         await this.service.loadHistoryFrom(derivedList, environment.electrumProtocol,
                             environment.proxyAddress, Network.from(environment.network));
@@ -287,7 +268,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     }
 
     createPsbt() {
-        this.psbt = PsbtFactory.create(this.outputArray, this.changeOutput, this.utxoArray, environment.network);
+        this.psbt = PsbtFactory.create(this.descriptor, this.outputArray, this.changeOutput, this.utxoArray, environment.network);
         this.base64 = this.psbt.object.toBase64();
     }
 
@@ -297,11 +278,11 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     }
 
     signPsbt() {
-        this.router.navigate(['./Sign'], { state: { data: this.base64 } });
+        this.router.navigate(['./sign'], { state: { data: this.base64 } });
     }
 
     clear() {
-        this.from = undefined;
+        this.descriptor = undefined;
         this.selectedDestination = undefined;
         this.selectedAmount = undefined;
         this.changeOutput = undefined;

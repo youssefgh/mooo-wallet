@@ -6,7 +6,7 @@
             <div class="input-field col s10 xl7 center-align">
                 <textarea id="source" class="materialize-textarea" [(ngModel)]="source"
                     [disabled]="confirmedBalance"></textarea>
-                <label for="source">Address Or Extended Public Key</label>
+                <label for="source">Address or descriptor</label>
             </div>
             <div class="col s2 xl1 file-field input-field">
                 <app-qr-code-reader (scanned)="onQrScan($event)"></app-qr-code-reader>
@@ -26,15 +26,6 @@
                     <i class="material-icons left">eject</i>
                     Clear
                 </a>
-            </div>
-        </div>
-        <div class="row" *ngIf="isPossibleLegacyAccount() && !confirmedBalance">
-            <div class="center-align">
-                <label>
-                    <input type="checkbox" id="isLegacyAccount" [(ngModel)]="isLegacyAccount"
-                        [disabled]="confirmedBalance" />
-                    <span for="isLegacyAccount">Legacy account</span>
-                </label>
             </div>
         </div>
         <div *ngIf="confirmedBalance">

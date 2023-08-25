@@ -17,8 +17,8 @@
         <div class="row center-align">
             <div class="col s3">
                 <label>
-                    <input name="derivationPathGroup" type="radio" [checked]="purpose === 44" (click)="setBIP(44)" />
-                    <span>BIP44</span>
+                    <input name="derivationPathGroup" type="radio" [checked]="purpose === 48" (click)="setBIP(48)" />
+                    <span>BIP48</span>
                 </label>
             </div>
             <div class="col s3">
@@ -42,12 +42,6 @@
         </div>
         <div class="row center-align">
             <div class="col s12 input-field">
-                <input id="derivationPath" type="text" readonly [value]="derivationPath()">
-                <label for="derivationPath">Derivation Path</label>
-            </div>
-        </div>
-        <div class="row center-align">
-            <div class="col s12 input-field">
                 <input id="account" type="number" min="0" [(ngModel)]="account">
                 <label for="account">Account</label>
             </div>
@@ -55,21 +49,42 @@
                 <input id="change" type="number" min="0" max="1" [(ngModel)]="change">
                 <label for="change">Change</label>
             </div>
+            <ng-container *ngIf="purpose == 48">
+                <div class="col s12 input-field">
+                    <input id="script" type="number" min="0" max="2" [(ngModel)]="script" readonly>
+                    <label for="script">Script</label>
+                </div>
+            </ng-container>
         </div>
         <div class="row">
             <div class="center-align">
-                <a class="waves-effect waves-light btn-large"
-                    (click)="derive()">Derive</a>
+                <a class="waves-effect waves-light btn-large" (click)="derive()">Derive</a>
             </div>
         </div>
-        <div *ngIf="derivedArray && derivedArray.length !== 0" class="row center-align">
+        <div *ngIf="privateDescriptor" class="row center-align">
             <div class="col s12 input-field">
-                <input id="xpriv" type="text" [value]="xpriv">
-                <label for="xpriv">Extended private key (Account {{account}})</label>
+                <textarea id="privateDescriptor" class="materialize-textarea"
+                    [(ngModel)]="privateDescriptor"></textarea>
+                <label for="privateDescriptor">Private descriptor (Account {{account}})</label>
             </div>
+        </div>
+        <div *ngIf="publicDescriptor" class="row center-align">
             <div class="col s12 input-field">
-                <input id="xpub" type="text" [value]="xpub">
-                <label for="xpub">Extended public key (Account {{account}})</label>
+                <textarea id="publicDescriptor" class="materialize-textarea" [(ngModel)]="publicDescriptor"></textarea>
+                <label for="publicDescriptor">Public descriptor (Account {{account}})</label>
+            </div>
+        </div>
+        <div *ngIf="privateDescriptorKey" class="row center-align">
+            <div class="col s12 input-field">
+                <textarea id="privateDescriptorKey" class="materialize-textarea"
+                    [(ngModel)]="privateDescriptorKey"></textarea>
+                <label for="privateDescriptorKey">Private descriptor key (Account {{account}})</label>
+            </div>
+        </div>
+        <div *ngIf="publicDescriptorKey" class="row center-align">
+            <div class="col s12 input-field">
+                <textarea id="publicDescriptorKey" class="materialize-textarea" [(ngModel)]="publicDescriptorKey"></textarea>
+                <label for="publicDescriptorKey">Public descriptor key (Account {{account}})</label>
             </div>
         </div>
         <div class="row">

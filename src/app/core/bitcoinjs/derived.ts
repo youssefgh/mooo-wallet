@@ -1,52 +1,50 @@
 import { Bip32Derivation, TapBip32Derivation } from 'bip174/src/lib/interfaces';
+import * as bitcoinjs from 'bitcoinjs-lib';
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371';
+import { OutputDescriptorKey } from '../output-descriptor-key';
 import { Address } from './address';
 
 export class Derived {
 
     address: Address;
-    purpose: number;
-    coinType: number;
-    account: number;
+    witness: Buffer[];
+    outputDescriptorKeyList: OutputDescriptorKey[];
     change: number;
     index: number;
-    masterFingerprint: Buffer;
-    publicKey: Buffer;
 
-    path() {
-        return 'm/' + this.purpose + '\'/' + this.coinType + '\'/' + this.account + '\'/' + this.change + '/' + this.index;
+    path(outputDescriptorKey: OutputDescriptorKey) {
+        return `m${outputDescriptorKey.derivation}/${this.change}/${this.index}`;
     }
 
-    bip32Derivation(): Bip32Derivation {
-        if (!this.masterFingerprint) {
-            // dummy masterFingerprint
-            this.masterFingerprint = Buffer.from('FFFFFFFF', 'hex');
+    bip32DerivationList(network: bitcoinjs.Network): Bip32Derivation[] {
+        const bip32DerivationList = new Array<Bip32Derivation>();
+        for (const outputDescriptorKey of this.outputDescriptorKeyList) {
+            const pubkey = outputDescriptorKey.publicKey(this.change, this.index, network);
+            bip32DerivationList.push({
+                masterFingerprint: Buffer.from(outputDescriptorKey.fingerprint, 'hex'),
+                pubkey,
+                path: this.path(outputDescriptorKey),
+            });
         }
-        return {
-            masterFingerprint: this.masterFingerprint,
-            pubkey: this.publicKey,
-            path: this.path(),
-        };
+        return bip32DerivationList;
     }
 
-    tapBip32Derivation(tapInternalKey?: Buffer): TapBip32Derivation {
-        if (!tapInternalKey) {
-            tapInternalKey = this.tapInternalKey();
+    tapBip32DerivationList(network: bitcoinjs.Network): TapBip32Derivation[] {
+        const tapBip32DerivationList = new Array<TapBip32Derivation>();
+        for (const outputDescriptorKey of this.outputDescriptorKeyList) {
+            const pubkey = this.tapInternalKey(outputDescriptorKey.publicKey(this.change, this.index, network));
+            tapBip32DerivationList.push({
+                masterFingerprint: Buffer.from(outputDescriptorKey.fingerprint, 'hex'),
+                pubkey,
+                path: this.path(outputDescriptorKey),
+                leafHashes: [],
+            });
         }
-        if (!this.masterFingerprint) {
-            // dummy masterFingerprint
-            this.masterFingerprint = Buffer.from('FFFFFFFF', 'hex');
-        }
-        return {
-            masterFingerprint: this.masterFingerprint,
-            pubkey: tapInternalKey,
-            path: this.path(),
-            leafHashes: [],
-        };
+        return tapBip32DerivationList;
     }
 
-    tapInternalKey() {
-        return toXOnly(this.publicKey);
+    tapInternalKey(publicKey: Buffer) {
+        return toXOnly(publicKey);
     }
 
 }
