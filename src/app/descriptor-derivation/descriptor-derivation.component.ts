@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
+import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 
 declare const M: any;
 
@@ -14,6 +15,7 @@ declare const M: any;
 export class DescriptorDerivationComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
+    qrCodeReaderComponent: QrCodeReaderComponent;
 
     descriptor: string;
     derivedArray: Array<Derived>;
@@ -52,8 +54,13 @@ export class DescriptorDerivationComponent implements OnInit, AfterContentChecke
         }
     }
 
+    onQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.qrCodeReaderComponent = qrCodeReaderComponent;
+    }
+
     onQrScan(text: string) {
         this.descriptor = text;
+        this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
     }
 
     deriveReceiving() {

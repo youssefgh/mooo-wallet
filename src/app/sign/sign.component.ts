@@ -1,10 +1,13 @@
 import { Location } from '@angular/common';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
+import { URDecoder } from '@ngraveio/bc-ur';
 import { environment } from '../../environments/environment';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { Psbt, SignResult } from '../core/bitcoinjs/psbt';
 import { PsbtTransactionDetails } from '../core/psbt-transaction-details';
+import { UrDecoderUtils } from '../core/ur-decoder-utils';
+import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 
 declare const M: any;
 
@@ -16,6 +19,9 @@ declare const M: any;
 })
 export class SignComponent implements OnInit, AfterContentChecked {
 
+    environment = environment;
+    qrCodeReaderComponent: QrCodeReaderComponent;
+    urDecoder = new URDecoder();
     psbtString: string;
 
     psbt: Psbt;
@@ -23,8 +29,6 @@ export class SignComponent implements OnInit, AfterContentChecked {
     signResult: SignResult;
 
     mnemonic = new Mnemonic;
-
-    environment = environment;
 
     selectedQr: string;
     qrModal;
@@ -56,8 +60,28 @@ export class SignComponent implements OnInit, AfterContentChecked {
         }
     }
 
+    onQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.qrCodeReaderComponent = qrCodeReaderComponent;
+    }
+
     onSourceQrScan(text: string) {
         this.psbtString = text;
+
+        if (UrDecoderUtils.isUr(text)) {
+            const ur = UrDecoderUtils.decode(text, this.urDecoder);
+            if (ur.error) {
+                M.toast({ html: `${ur.error} !`, classes: 'red' });
+                return;
+            }
+            if (ur.message) {
+                this.psbtString = ur.message;
+                this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
+                this.urDecoder = new URDecoder();
+            }
+        } else {
+            this.psbtString = text;
+            this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
+        }
     }
 
     load() {
@@ -96,6 +120,7 @@ export class SignComponent implements OnInit, AfterContentChecked {
     }
 
     clear() {
+        this.urDecoder = new URDecoder();
         this.psbtString = null;
         this.psbt = null;
         this.signResult = null;

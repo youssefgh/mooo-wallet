@@ -5,6 +5,7 @@ import { Big } from 'big.js';
 import * as coinSelect from 'coinselect/split';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
+import { Bip21DecoderUtils } from '../core/bip21-decoder-utils';
 import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
 import { Network } from '../core/bitcoinjs/network';
@@ -12,6 +13,7 @@ import { Output } from '../core/bitcoinjs/output';
 import { Psbt } from '../core/bitcoinjs/psbt';
 import { PsbtFactory } from '../core/bitcoinjs/psbt-factory';
 import { Utxo } from '../core/bitcoinjs/utxo';
+import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { CreateTransactionService } from './create-transaction.service';
 
@@ -25,6 +27,8 @@ declare const M: any;
 })
 export class CreateTransactionComponent implements OnInit, AfterContentChecked {
 
+    sourceQrCodeReaderComponent: QrCodeReaderComponent;
+    destinationQrCodeReaderComponent: QrCodeReaderComponent;
     descriptor: string;
     selectedDestination: string;
     selectedAmount: number;
@@ -70,8 +74,13 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
         }
     }
 
+    onSourceQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.sourceQrCodeReaderComponent = qrCodeReaderComponent;
+    }
+
     onSourceQrScan(text: string) {
         this.descriptor = text;
+        this.sourceQrCodeReaderComponent.stopDecodeFromVideoDevice();
     }
 
     isFromValid() {
@@ -185,8 +194,19 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
         }
     }
 
+    onDestinationQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.destinationQrCodeReaderComponent = qrCodeReaderComponent;
+    }
+
     onDestinationQrScan(text: string) {
-        this.selectedDestination = text;
+        if (Bip21DecoderUtils.isBip21(text)) {
+            const bip21 = Bip21DecoderUtils.decode(text);
+            this.selectedDestination = bip21.address;
+            this.selectedAmount = bip21.amount;
+        } else {
+            this.selectedDestination = text;
+        }
+        this.destinationQrCodeReaderComponent.stopDecodeFromVideoDevice();
     }
 
     addDestination() {

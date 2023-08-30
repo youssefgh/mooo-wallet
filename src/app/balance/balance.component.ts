@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Big } from 'big.js';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
+import { Bip21DecoderUtils } from '../core/bip21-decoder-utils';
 import { Address } from '../core/bitcoinjs/address';
 import { Bip32Utils } from '../core/bitcoinjs/bip32.utils';
 import { ConfirmedTransaction } from '../core/bitcoinjs/confirmed-transaction';
@@ -13,6 +14,7 @@ import { GetBalanceResponse } from '../core/electrum/get-balance-response';
 import { GetHistoryResponseItem } from '../core/electrum/get-history-response-item';
 import { OutputDescriptor } from '../core/output-descriptor';
 import { OutputDescriptorKey } from '../core/output-descriptor-key';
+import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { BalanceService } from './balance.service';
 
@@ -26,6 +28,7 @@ declare const M: any;
 export class BalanceComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
+    qrCodeReaderComponent: QrCodeReaderComponent;
     source: string;
     confirmedBalance: string;
     unconfirmedBalance: string;
@@ -73,8 +76,18 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         }
     }
 
+    onQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.qrCodeReaderComponent = qrCodeReaderComponent;
+    }
+
     onQrScan(text: string) {
-        this.source = text;
+        if (Bip21DecoderUtils.isBip21(text)) {
+            const bip21 = Bip21DecoderUtils.decode(text);
+            this.source = bip21.address;
+        } else {
+            this.source = text;
+        }
+        this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
     }
 
     loadBalance() {

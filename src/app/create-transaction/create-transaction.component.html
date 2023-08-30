@@ -14,7 +14,8 @@
                 <label for="descriptor">Descriptor</label>
             </div>
             <div *ngIf="!utxosAvailable()" class="col s3 m2 l1 xl1" style="margin-top: 1rem">
-                <app-qr-code-reader (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
+                <app-qr-code-reader (created)="onSourceQrReaderCreated($event)"
+                    (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
         <div *ngIf="!utxosAvailable()" class="row center-align">
@@ -84,7 +85,8 @@
                 <label for="destination">Destination</label>
             </div>
             <div class="col s3 l1 xl1 center-align" style="margin-top: 1rem">
-                <app-qr-code-reader (scanned)="onDestinationQrScan($event)"></app-qr-code-reader>
+                <app-qr-code-reader (created)="onDestinationQrReaderCreated($event)"
+                    (scanned)="onDestinationQrScan($event)"></app-qr-code-reader>
             </div>
             <div class="col s12 l1 center-align" style="margin-top: 1rem">
                 <a class="waves-effect waves-light btn-floating" (click)="addDestination()">

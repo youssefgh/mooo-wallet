@@ -8,7 +8,8 @@
                 <label for="key">Descriptor</label>
             </div>
             <div class="col s2 xl1 file-field input-field">
-                <app-qr-code-reader (scanned)="onQrScan($event)"></app-qr-code-reader>
+                <app-qr-code-reader (created)="onQrReaderCreated($event)"
+                    (scanned)="onQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
         <div class="row">

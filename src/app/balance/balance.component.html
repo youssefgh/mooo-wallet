@@ -9,7 +9,8 @@
                 <label for="source">Address or descriptor</label>
             </div>
             <div class="col s2 xl1 file-field input-field">
-                <app-qr-code-reader (scanned)="onQrScan($event)"></app-qr-code-reader>
+                <app-qr-code-reader (created)="onQrReaderCreated($event)"
+                    (scanned)="onQrScan($event)"></app-qr-code-reader>
             </div>
             <div class="col s12 xl4 center-align" style="margin-top: 0.5rem">
                 <a *ngIf="!confirmedBalance" class="waves-effect waves-light btn-large" (click)="loadBalance()">

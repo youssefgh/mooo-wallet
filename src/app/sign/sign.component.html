@@ -8,7 +8,8 @@
                 <label for="source">Psbt</label>
             </div>
             <div class="col s3 m2 l1 xl1" style="margin-top: 1rem">
-                <app-qr-code-reader (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
+                <app-qr-code-reader (created)="onQrReaderCreated($event)"
+                    (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
         <div *ngIf="!psbt" class="row center-align">

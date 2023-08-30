@@ -1,5 +1,5 @@
 import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
-import { BrowserQRCodeReader } from '@zxing/browser';
+import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
 
 declare const M: any;
 
@@ -12,11 +12,13 @@ export class QrCodeReaderComponent implements OnInit {
 
     @Output()
     scanned = new EventEmitter<string>();
-
+    @Output()
+    created = new EventEmitter<QrCodeReaderComponent>();
     @Output()
     error = new EventEmitter<string>();
 
     codeReader = new BrowserQRCodeReader();
+    scannerControls: IScannerControls;
 
     videoInputDevices: MediaDeviceInfo[];
 
@@ -51,6 +53,7 @@ export class QrCodeReaderComponent implements OnInit {
                 this.selectedMediaDeviceInfo = null;
             }
         });
+        this.created.emit(this);
     }
 
     decodeFromFile() {
@@ -75,21 +78,22 @@ export class QrCodeReaderComponent implements OnInit {
         this.qrModal.open();
     }
 
-    decodeFromVideoDevice(deviceInfo: MediaDeviceInfo) {
+    async decodeFromVideoDevice(deviceInfo: MediaDeviceInfo) {
         this.selectedMediaDeviceInfo = deviceInfo;
-        this.codeReader
-            .decodeOnceFromVideoDevice(deviceInfo.deviceId, 'video')
-            .then(result => {
-                this.scanned.emit(result.getText());
-                this.stopDecodeFromVideoDevice();
-            }).catch(err => {
+        await this.codeReader
+            .decodeFromVideoDevice(deviceInfo.deviceId, 'video',
+                (result, error, scannerControls) => {
+                    this.scannerControls = scannerControls;
+                    this.scanned.emit(result.getText());
+                })
+            .catch(err => {
                 console.error(err);
                 this.error.emit(err);
             });
     }
 
     stopDecodeFromVideoDevice() {
-        this.selectedMediaDeviceInfo = null;
+        this.scannerControls?.stop();
         this.qrModal.close();
     }
 

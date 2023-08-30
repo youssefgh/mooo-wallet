@@ -3,6 +3,7 @@ import { AfterContentChecked, Component, ViewEncapsulation } from '@angular/core
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
+import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 import { BroadcastService } from './broadcast.service';
 
 declare const M: any;
@@ -15,6 +16,7 @@ declare const M: any;
 })
 export class BroadcastComponent implements AfterContentChecked {
 
+    qrCodeReaderComponent: QrCodeReaderComponent;
     signedTransaction: string;
 
     constructor(
@@ -38,8 +40,13 @@ export class BroadcastComponent implements AfterContentChecked {
         }
     }
 
+    onQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.qrCodeReaderComponent = qrCodeReaderComponent;
+    }
+
     onSourceQrScan(text: string) {
         this.signedTransaction = text;
+        this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
     }
 
     async broadcast() {
