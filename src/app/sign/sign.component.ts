@@ -65,8 +65,6 @@ export class SignComponent implements OnInit, AfterContentChecked {
     }
 
     onSourceQrScan(text: string) {
-        this.psbtString = text;
-
         if (UrDecoderUtils.isUr(text)) {
             const ur = UrDecoderUtils.decode(text, this.urDecoder);
             if (ur.error) {

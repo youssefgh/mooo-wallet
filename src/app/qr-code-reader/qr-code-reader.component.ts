@@ -84,7 +84,9 @@ export class QrCodeReaderComponent implements OnInit {
             .decodeFromVideoDevice(deviceInfo.deviceId, 'video',
                 (result, error, scannerControls) => {
                     this.scannerControls = scannerControls;
-                    this.scanned.emit(result.getText());
+                    if (result) {
+                        this.scanned.emit(result.getText());
+                    }
                 })
             .catch(err => {
                 console.error(err);
