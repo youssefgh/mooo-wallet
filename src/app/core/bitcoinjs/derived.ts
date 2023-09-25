@@ -23,7 +23,7 @@ export class Derived {
             bip32DerivationList.push({
                 masterFingerprint: Buffer.from(outputDescriptorKey.fingerprint, 'hex'),
                 pubkey,
-                path: this.path(outputDescriptorKey),
+                path: this.path(outputDescriptorKey).replace('h', "'"),
             });
         }
         return bip32DerivationList;
@@ -36,7 +36,7 @@ export class Derived {
             tapBip32DerivationList.push({
                 masterFingerprint: Buffer.from(outputDescriptorKey.fingerprint, 'hex'),
                 pubkey,
-                path: this.path(outputDescriptorKey),
+                path: this.path(outputDescriptorKey).replaceAll('h', "'"),
                 leafHashes: [],
             });
         }

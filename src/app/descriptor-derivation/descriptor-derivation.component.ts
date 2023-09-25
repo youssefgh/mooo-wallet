@@ -1,8 +1,8 @@
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
+import { OutputDescriptor } from '../core/output-descriptor';
 import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 
 declare const M: any;
@@ -77,7 +77,8 @@ export class DescriptorDerivationComponent implements OnInit, AfterContentChecke
         if (change === undefined) {
             change = this.change;
         }
-        this.derivedArray = Derivator.derive(this.descriptor, change, this.fromIndex, this.toIndex, environment.network);
+        const outputDescriptor = OutputDescriptor.from(this.descriptor);
+        this.derivedArray = outputDescriptor.derive(change, this.fromIndex, this.toIndex, environment.network);
 
         this.scrollTarget.nativeElement.scrollIntoView();
     }

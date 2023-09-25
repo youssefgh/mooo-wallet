@@ -26,6 +26,7 @@
                     <span class="green-text">{{walletDestination.amount}} BTC</span>
                     =>
                     <span style="text-decoration: underline;">{{walletDestination.address}}</span>
+                    <span *ngIf="walletDestination.change" class="new badge orange" data-badge-caption="Change"></span>
                 </h5>
             </div>
         </div>

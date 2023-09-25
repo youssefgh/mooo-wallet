@@ -14,7 +14,7 @@ describe('OutputDescriptorKey', () => {
     expect(instance.change).toEqual('<0;1>');
   });
 
-  it(`should build return correct derivationDetails for single sig`, () => {
+  it(`should build return correct derivationDetails`, () => {
     const text = "[93ba71a5/86'/1'/0']tpubDDD2oxu2ywVnQ8RQpKtAtmE2i9FWGKgQBhzMTQJBgMbTD8SAX2J2WAJdAFXeZPBZcm77QT12XhG7aMudJku8dhP2JXz5AjeE2uT9j8oMQ1K/<0;1>/*";
     const instance = OutputDescriptorKey.from(text);
 
@@ -26,7 +26,7 @@ describe('OutputDescriptorKey', () => {
     expect(result.script).toEqual(undefined);
   });
 
-  it(`should build return correct derivationDetails for multi sig`, () => {
+  it(`should build return correct derivationDetails when 'h' is used for hardening`, () => {
     const text = "[bdce89c0/48h/1h/0h/2h]tpubDFCs5cUrySMKHvrXeT4CyWuJnyZhWSP5wTpqVmB2ScDUPLgp5qvZYFyDQFZ6iKinR3jHbSqyfGakbAYhkhQQLTriCES6eops1ixiGvGYH4A/<0;1>/*";
     const instance = OutputDescriptorKey.from(text);
 
@@ -38,7 +38,7 @@ describe('OutputDescriptorKey', () => {
     expect(result.script).toEqual(2);
   });
 
-  it(`should build return correct derivationDetails for single sig`, () => {
+  it(`should build return correct publicKey`, () => {
     const text = "[93ba71a5/86'/1'/0']tpubDDD2oxu2ywVnQ8RQpKtAtmE2i9FWGKgQBhzMTQJBgMbTD8SAX2J2WAJdAFXeZPBZcm77QT12XhG7aMudJku8dhP2JXz5AjeE2uT9j8oMQ1K/<0;1>/*";
     const change = 1;
     const index = 0;

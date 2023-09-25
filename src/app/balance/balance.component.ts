@@ -7,7 +7,6 @@ import { Bip21DecoderUtils } from '../core/bip21-decoder-utils';
 import { Address } from '../core/bitcoinjs/address';
 import { Bip32Utils } from '../core/bitcoinjs/bip32.utils';
 import { ConfirmedTransaction } from '../core/bitcoinjs/confirmed-transaction';
-import { Derivator } from '../core/bitcoinjs/derivator';
 import { HdCoin } from '../core/bitcoinjs/hd-coin';
 import { Network } from '../core/bitcoinjs/network';
 import { GetBalanceResponse } from '../core/electrum/get-balance-response';
@@ -118,7 +117,9 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         }
     }
 
+    // todo use shared logic with load history
     async loadBalanceFromDescriptor() {
+        const outputDescriptor = OutputDescriptor.from(this.source);
         let addressList: Array<Address>;
         let fromIndex = 0;
         let change = 0;
@@ -128,7 +129,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         try {
             do {
                 found = false;
-                let derivedArray = Derivator.derive(this.source, change, fromIndex, fromIndex + this.localStorageService.settings.gapLimit, environment.network);
+                let derivedArray = outputDescriptor.derive(change, fromIndex, fromIndex + this.localStorageService.settings.gapLimit, environment.network);
                 addressList = derivedArray
                     .map(derived => {
                         return derived.address;
@@ -202,6 +203,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
     }
 
     async loadHistoryFromDescriptor() {
+        const outputDescriptor = OutputDescriptor.from(this.source);
         let addressList: Array<Address>;
         let fromIndex = 0;
         let change = 0;
@@ -212,7 +214,7 @@ export class BalanceComponent implements OnInit, AfterContentChecked {
         try {
             do {
                 found = false;
-                addressList = Derivator.derive(this.source, change, fromIndex, fromIndex + this.localStorageService.settings.gapLimit, environment.network)
+                addressList = outputDescriptor.derive(change, fromIndex, fromIndex + this.localStorageService.settings.gapLimit, environment.network)
                     .map(derived => {
                         return derived.address;
                     });

@@ -64,7 +64,8 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     }
 
     derive() {
-        const deriveListFromMnemonicResult = Derivator.deriveListFromMnemonic(this.mnemonic, this.purpose, this.coinType, this.account, this.script, this.change, this.fromIndex, this.toIndex, environment.network);
+        const script = (this.purpose === 48) ? this.script : null;
+        const deriveListFromMnemonicResult = Derivator.deriveListFromMnemonic(this.mnemonic, this.purpose, this.coinType, this.account, script, this.change, this.fromIndex, this.toIndex, environment.network);
         this.publicDescriptorKey = deriveListFromMnemonicResult.publicDescriptorKey;
         this.privateDescriptorKey = deriveListFromMnemonicResult.privateDescriptorKey;
         this.publicDescriptor = deriveListFromMnemonicResult.publicDescriptor;

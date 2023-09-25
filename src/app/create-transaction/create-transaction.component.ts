@@ -6,13 +6,13 @@ import * as coinSelect from 'coinselect/split';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Bip21DecoderUtils } from '../core/bip21-decoder-utils';
-import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
 import { Network } from '../core/bitcoinjs/network';
 import { Output } from '../core/bitcoinjs/output';
 import { Psbt } from '../core/bitcoinjs/psbt';
 import { PsbtFactory } from '../core/bitcoinjs/psbt-factory';
 import { Utxo } from '../core/bitcoinjs/utxo';
+import { OutputDescriptor } from '../core/output-descriptor';
 import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { CreateTransactionService } from './create-transaction.service';
@@ -83,11 +83,11 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
         this.sourceQrCodeReaderComponent.stopDecodeFromVideoDevice();
     }
 
-    isFromValid() {
+    isOutputDescriptorValid(outputDescriptor: OutputDescriptor) {
         const account = 0;
         const change = 0;
         try {
-            Derivator.derive(this.descriptor, change, account, 1, environment.network);
+            outputDescriptor.derive(change, account, 1, environment.network);
             return true;
         } catch (e) {
             return false;
@@ -95,8 +95,11 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     }
 
     async loadUTXO() {
-        if (this.isFromValid()) {
-            await this.loadUTXOFromKey(this.descriptor);
+        const outputDescriptor = OutputDescriptor.from(this.descriptor);
+        if (this.isOutputDescriptorValid(outputDescriptor)) {
+            await this.loadUTXOFromOutputDescriptor(outputDescriptor);
+        } else {
+            M.toast({ html: 'Invalid or incompatible output descriptor', classes: 'red' });
         }
     }
 
@@ -122,7 +125,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
         }
     }
 
-    async loadUTXOFromKey(key: string) {
+    async loadUTXOFromOutputDescriptor(outputDescriptor: OutputDescriptor) {
         const gap = this.localStorageService.settings.gapLimit;
         let lastUsedChangeIndex = -1;
         const usedDerivedList = new Array<Derived>();
@@ -134,7 +137,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
                 do {
                     fromIndex += gap;
                     toIndex += gap;
-                    let derivedList = Derivator.derive(key, change, fromIndex, fromIndex + gap, environment.network);
+                    let derivedList = outputDescriptor.derive(change, fromIndex, fromIndex + gap, environment.network);
                     const historyArray =
                         await this.service.loadHistoryFrom(derivedList, environment.electrumProtocol,
                             environment.proxyAddress, Network.from(environment.network));
@@ -150,7 +153,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
                     }
                 } while (fromIndex <= lastUsedIndex && lastUsedIndex < toIndex);
             }
-            const changeDerived = Derivator.derive(key, 1, lastUsedChangeIndex + 1, lastUsedChangeIndex + 2, environment.network)[0];
+            const changeDerived = outputDescriptor.derive(1, lastUsedChangeIndex + 1, lastUsedChangeIndex + 2, environment.network)[0];
             this.changeOutput = new Output(changeDerived.address.value, undefined, changeDerived);
             await this.loadUTXOFromList(usedDerivedList);
         } catch (error) {
@@ -288,7 +291,8 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
     }
 
     createPsbt() {
-        this.psbt = PsbtFactory.create(this.descriptor, this.outputArray, this.changeOutput, this.utxoArray, environment.network);
+        const outputDescriptor = OutputDescriptor.from(this.descriptor);
+        this.psbt = PsbtFactory.create(outputDescriptor, this.outputArray, this.changeOutput, this.utxoArray, environment.network);
         this.base64 = this.psbt.object.toBase64();
     }
 

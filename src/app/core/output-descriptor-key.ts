@@ -47,8 +47,8 @@ export class OutputDescriptorKey {
     }
 
     publicKey(change: number, index: number, network: bitcoinjs.Network) {
-        const scriptNode = Bip32Utils.instance.fromBase58(this.value, network);
-        const changeNode = scriptNode.derive(change);
+        const node = Bip32Utils.instance.fromBase58(this.value, network);
+        const changeNode = node.derive(change);
         return changeNode.derive(index).publicKey;
     }
 

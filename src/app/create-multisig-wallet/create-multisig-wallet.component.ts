@@ -1,40 +1,27 @@
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Derivator } from '../core/bitcoinjs/derivator';
-import { Derived } from '../core/bitcoinjs/derived';
-import { HdCoin } from '../core/bitcoinjs/hd-coin';
 import { OutputDescriptor } from '../core/output-descriptor';
 import { OutputDescriptorKey } from '../core/output-descriptor-key';
+import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 
 declare const M: any;
 
 @Component({
-    selector: 'app-multisig-derivation',
-    templateUrl: './multisig-derivation.component.html',
-    styleUrls: ['./multisig-derivation.component.css']
+    selector: 'app-create-multisig-wallet',
+    templateUrl: './create-multisig-wallet.component.html',
+    styleUrls: ['./create-multisig-wallet.component.css']
 })
-export class MultisigDerivationComponent implements OnInit, AfterContentChecked {
+export class CreateMultisigWalletComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
 
-    purpose = 48;
-    coinType: number;
-    account = 0;
-    change = 0;
-    script = 2;
-    keyNumber = 2;
+    descriptorKeyItemQrCodeReaderComponent: QrCodeReaderComponent;
+
+    descriptorKeyItem: string;
     descriptorKeyList = new Array<string>;
     threshold = 1;
-    fromIndex = 0;
-    defaultTo = 10;
-    toIndex = this.defaultTo;
-
-    @ViewChild('scrollTarget', { static: true })
-    scrollTarget: ElementRef;
 
     descriptor: string;
-
-    derivedArray: Array<Derived>;
 
     selectedQr: string;
     qrModal;
@@ -43,9 +30,6 @@ export class MultisigDerivationComponent implements OnInit, AfterContentChecked 
     qrModalRef: ElementRef;
 
     ngOnInit() {
-        this.coinType = HdCoin.id(environment.network);
-        this.descriptorKeyListUpdate();
-
         const elem = this.qrModalRef.nativeElement;
         this.qrModal = M.Modal.init(elem, {});
     }
@@ -58,29 +42,42 @@ export class MultisigDerivationComponent implements OnInit, AfterContentChecked 
         }
     }
 
-    descriptorKeyListUpdate() {
-        this.descriptorKeyList.length = this.keyNumber;
+    onDescriptorKeyItemQrReaderCreated(qrCodeReaderComponent: QrCodeReaderComponent) {
+        this.descriptorKeyItemQrCodeReaderComponent = qrCodeReaderComponent;
     }
 
-    deriveMultisig() {
+    onDescriptorKeyItemQrScan(text: string) {
+        this.descriptorKeyItem = text;
+        this.descriptorKeyItemQrCodeReaderComponent.stopDecodeFromVideoDevice();
+    }
+
+    addDescriptorKeyItem() {
+        this.descriptorKeyList.push(this.descriptorKeyItem);
+        this.descriptorKeyItem = null;
+    }
+
+    removeDescriptorKeyItem(i: number) {
+        this.descriptorKeyList.splice(i, 1);
+    }
+
+    createMultisig() {
         const outputDescriptor = new OutputDescriptor();
         outputDescriptor.script = 'wsh';
         outputDescriptor.threshold = this.threshold;
         outputDescriptor.sortedmultiParamList = this.descriptorKeyList.map(descriptorKey => OutputDescriptorKey.from(descriptorKey));
         this.descriptor = outputDescriptor.toString();
-        this.derivedArray = Derivator.derive(this.descriptor, this.change, this.fromIndex, this.toIndex, environment.network);
-
-        this.scrollTarget.nativeElement.scrollIntoView();
-    }
-
-    more() {
-        this.toIndex += this.defaultTo;
-        this.deriveMultisig();
     }
 
     showQr(qr: string) {
         this.selectedQr = qr;
         this.qrModal.open();
+    }
+
+    clear() {
+        this.descriptorKeyItem = null;
+        this.descriptorKeyList = new Array<string>;
+        this.threshold = 1;
+        this.descriptor = null;
     }
 
 }

@@ -5,12 +5,12 @@
         <div class="row valign-wrapper">
             <div *ngIf="!utxosAvailable()" class="input-field col s9 m10 l11 xl11">
                 <textarea id="descriptor" class="materialize-textarea" [(ngModel)]="descriptor"
-                    [ngClass]="{'valid': isFromValid()}" [disabled]="utxosAvailable()"></textarea>
+                    [disabled]="utxosAvailable()"></textarea>
                 <label for="descriptor">Descriptor</label>
             </div>
             <div *ngIf="utxosAvailable()" class="input-field col s12 m12 l12 xl12">
                 <textarea id="descriptor" class="materialize-textarea" [(ngModel)]="descriptor"
-                    [ngClass]="{'valid': isFromValid()}" [disabled]="utxosAvailable()"></textarea>
+                    [disabled]="utxosAvailable()"></textarea>
                 <label for="descriptor">Descriptor</label>
             </div>
             <div *ngIf="!utxosAvailable()" class="col s3 m2 l1 xl1" style="margin-top: 1rem">

@@ -1,0 +1,82 @@
+<app-navigation-bar header="Create Multisig Wallet"></app-navigation-bar>
+
+<main>
+    <div class="container">
+        <div class="row center-align">
+            <ng-container *ngIf="!descriptor">
+                <div class="input-field col s9 l11">
+                    <textarea id="descriptorKeyItem" class="materialize-textarea"
+                        [(ngModel)]="descriptorKeyItem"></textarea>
+                    <label for="descriptorKeyItem">Key {{descriptorKeyList.length+1}}</label>
+                </div>
+                <div class="col s3 l1 center-align" style="margin-top: 1rem">
+                    <app-qr-code-reader (created)="onDescriptorKeyItemQrReaderCreated($event)"
+                        (scanned)="onDescriptorKeyItemQrScan($event)"></app-qr-code-reader>
+                </div>
+                <div class="col s12 center-align" style="margin-top: 1rem">
+                    <a class="waves-effect waves-light btn-floating" (click)="addDescriptorKeyItem()">
+                        <i class="material-icons">add</i>
+                    </a>
+                </div>
+            </ng-container>
+            <div *ngIf="descriptorKeyList.length > 0" class="row">
+                <table class="responsive-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Key</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let key of descriptorKeyList; let i = index" [attr.data-index]="i">
+                            <td>{{i+1}}</td>
+                            <td>{{key}}</td>
+                            <td *ngIf="!descriptor">
+                                <a class="waves-effect waves-light btn-floating secondary-content"
+                                    (click)="removeDescriptorKeyItem(i)">
+                                    <i class="material-icons">remove</i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col s12">
+                <p class="range-field">
+                    <input type="range" id="threshold" min="1" [max]="descriptorKeyList.length" [disabled]="descriptor"
+                        [(ngModel)]="threshold" />
+                    <label for="threshold">Threshold: {{threshold}}</label>
+                </p>
+            </div>
+        </div>
+        <div class="row" *ngIf="!descriptor">
+            <div class="center-align">
+                <a class="waves-effect waves-light btn-large" [ngClass]="{'disabled': descriptorKeyList.length < 2}"
+                    (click)="createMultisig()">
+                    Create {{threshold}} of {{descriptorKeyList.length}} multisig
+                </a>
+            </div>
+        </div>
+        <div *ngIf="descriptor" class="row center-align">
+            <div class="col s12 input-field">
+                <textarea id="descriptor" class="materialize-textarea" readonly [(ngModel)]="descriptor"></textarea>
+                <label for="descriptor">Descriptor</label>
+            </div>
+            <a class="waves-effect waves-light btn" (click)="showQr(descriptor)">QR</a>
+        </div>
+        <div *ngIf="descriptor" class="row center-align">
+            <div class="col s12" style="margin-top: 0.5rem">
+                <a class="waves-effect waves-light btn orange" (click)="clear()">Clear</a>
+            </div>
+        </div>
+    </div>
+</main>
+<div class="modal" style="width: 30vw; min-width: 280px" #qrModal>
+    <div class="modal-content center-align">
+        <app-qr-code [value]="selectedQr" style="width: 180px"></app-qr-code>
+        <p style="font-size: smaller">{{selectedQr}}</p>
+    </div>
+    <div class="modal-footer" style="text-align: center">
+        <a class="modal-close waves-effect waves-green btn-flat">Close</a>
+    </div>
+</div>

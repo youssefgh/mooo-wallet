@@ -102,6 +102,7 @@ export class SignComponent implements OnInit, AfterContentChecked {
 
     sign() {
         const signResult = this.psbt.sign(this.mnemonic);
+        this.psbtTransactionDetails = PsbtTransactionDetails.fromSigned(this.mnemonic, this.psbt.object, this.environment.network);
         if (signResult?.signedTransaction) {
             this.psbtTransactionDetails.calculateFees();
         }

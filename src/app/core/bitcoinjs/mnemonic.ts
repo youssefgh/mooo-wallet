@@ -30,11 +30,14 @@ export class Mnemonic {
         return this.passphrase && Mnemonic.passphraseHashFrom(this.passphrase) === mnemonicPassphraseHash;
     }
 
-    extendedPublicKey(purpose: number, account: number, network: bitcoinjs.Network) {
+    finalNode(purpose: number, account: number, script: number, network: bitcoinjs.Network) {
         const hdRoot = HdRoot.from(this, network);
         const accountNode = hdRoot.deriveHardened(purpose).deriveHardened(HdCoin.id(network)).
             deriveHardened(account);
-        return accountNode.neutered().toBase58();
+        if (script) {
+            return accountNode.deriveHardened(script);
+        }
+        return accountNode;
     }
 
 }
