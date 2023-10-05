@@ -52,6 +52,10 @@ export class CreateMultisigWalletComponent implements OnInit, AfterContentChecke
     }
 
     addDescriptorKeyItem() {
+        if (!OutputDescriptorKey.isValid(this.descriptorKeyItem)) {
+            M.toast({ html: 'Invalid descriptor key !', classes: 'red' });
+            return;
+        }
         this.descriptorKeyList.push(this.descriptorKeyItem);
         this.descriptorKeyItem = null;
     }

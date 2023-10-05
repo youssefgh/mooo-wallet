@@ -34,6 +34,12 @@ export class OutputDescriptorKey {
         return instance;
     }
 
+    static isValid(
+        text: string,
+    ) {
+        return !text.includes('(');
+    }
+
     derivationDetails() {
         const derivationList = this.derivation.split('/');
         const purpose = parseInt(derivationList[1].substring(0, derivationList[1].length - 1));

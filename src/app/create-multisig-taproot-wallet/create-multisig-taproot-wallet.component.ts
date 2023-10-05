@@ -62,6 +62,10 @@ export class CreateMultisigTaprootWalletComponent implements OnInit, AfterConten
     }
 
     addDescriptorKeyItem() {
+        if (!OutputDescriptorKey.isValid(this.descriptorKeyItem)) {
+            M.toast({ html: 'Invalid descriptor key !', classes: 'red' });
+            return;
+        }
         this.descriptorKeyList.push(this.descriptorKeyItem);
         this.descriptorKeyItem = null;
     }
@@ -71,6 +75,10 @@ export class CreateMultisigTaprootWalletComponent implements OnInit, AfterConten
     }
 
     createMultisig() {
+        if (!OutputDescriptorKey.isValid(this.descriptorKey)) {
+            M.toast({ html: 'Invalid path descriptor key !', classes: 'red' });
+            return;
+        }
         const outputDescriptor = new OutputDescriptor();
         outputDescriptor.script = 'tr';
         outputDescriptor.key = OutputDescriptorKey.from(this.descriptorKey);
