@@ -1,6 +1,5 @@
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Derivator } from '../core/bitcoinjs/derivator';
 import { Derived } from '../core/bitcoinjs/derived';
 import { HdCoin } from '../core/bitcoinjs/hd-coin';
 import { Mnemonic } from '../core/bitcoinjs/mnemonic';
@@ -65,12 +64,12 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     derive() {
         const script = (this.purpose === 48) ? this.script : null;
-        const deriveListFromMnemonicResult = Derivator.deriveListFromMnemonic(this.mnemonic, this.purpose, this.coinType, this.account, script, this.change, this.fromIndex, this.toIndex, environment.network);
-        this.publicDescriptorKey = deriveListFromMnemonicResult.publicDescriptorKey;
-        this.privateDescriptorKey = deriveListFromMnemonicResult.privateDescriptorKey;
-        this.publicDescriptor = deriveListFromMnemonicResult.publicDescriptor;
-        this.privateDescriptor = deriveListFromMnemonicResult.privateDescriptor;
-        this.derivedArray = deriveListFromMnemonicResult.derivedArray;
+        const deriveListResult = this.mnemonic.deriveList(this.purpose, this.coinType, this.account, script, this.change, this.fromIndex, this.toIndex, environment.network);
+        this.publicDescriptorKey = deriveListResult.publicDescriptorKey;
+        this.privateDescriptorKey = deriveListResult.privateDescriptorKey;
+        this.publicDescriptor = deriveListResult.publicDescriptor;
+        this.privateDescriptor = deriveListResult.privateDescriptor;
+        this.derivedArray = deriveListResult.derivedArray;
 
         this.scrollTarget.nativeElement.scrollIntoView();
     }

@@ -13,22 +13,22 @@ export class BtcPipe implements PipeTransform {
         if (!satoshis) {
             return '0';
         }
-        let string;
+        let text: string;
         if (satoshis instanceof Big) {
             const big = this.conversionService.bigSatoshiToBitcoinBig(satoshis);
-            string = parseFloat(big.valueOf()).toFixed(8);
+            text = parseFloat(big.valueOf()).toFixed(8);
         } else {
-            const number = this.conversionService.satoshiToBitcoin(satoshis);
-            string = number.toFixed(8);
+            const number = this.conversionService.satoshiToBitcoin(satoshis as number);
+            text = number.toFixed(8);
         }
-        return this.removeTailingZeros(string);
+        return this.removeTailingZeros(text);
     }
 
     removeTailingZeros(text: string) {
-        while (text[text.length - 1] === '0') {
+        while (text.endsWith('0')) {
             text = text.substring(0, text.length - 1);
         }
-        if (text[text.length - 1] === '.') {
+        if (text.endsWith('.')) {
             text = text.substring(0, text.length - 1);
         }
         return text;

@@ -1,63 +1,10 @@
 import { BIP32Interface } from 'bip32';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371';
-import { OutputDescriptor } from '../output-descriptor';
-import { OutputDescriptorKey } from '../output-descriptor-key';
 import { Address } from './address';
 import { Derived } from './derived';
-import { HdRoot } from './hd-root';
-import { Mnemonic } from './mnemonic';
 
 export class Derivator {
-
-    static deriveListFromMnemonic(mnemonic: Mnemonic, purpose: number, coinType: number, account: number, script: number, change: number, startIndex: number, endIndex: number, network: bitcoinjs.Network) {
-        let derivedArray: Array<Derived>;
-        let publicDescriptor: string;
-        let privateDescriptor: string;
-        let publicDescriptorKey: string;
-        let privateDescriptorKey: string;
-
-        const hdRoot = HdRoot.from(mnemonic, network);
-        const finalNode = mnemonic.finalNode(purpose, account, script, network);
-
-        const publicOutputDescriptorKey = new OutputDescriptorKey();
-        publicOutputDescriptorKey.fingerprint = hdRoot.fingerprint.toString('hex');
-        publicOutputDescriptorKey.derivation = `/${purpose}'/${coinType}'/${account}'`;
-        if (purpose == 48) {
-            publicOutputDescriptorKey.derivation = `${publicOutputDescriptorKey.derivation}/${script}'`;
-        }
-        publicOutputDescriptorKey.value = finalNode.neutered().toBase58();
-        if (purpose == 48) {
-            publicDescriptorKey = publicOutputDescriptorKey.toString();
-        } else {
-            const publicOutputDescriptor = new OutputDescriptor();
-            publicOutputDescriptor.script = OutputDescriptor.scriptFromPurpose(purpose);
-            publicOutputDescriptor.key = publicOutputDescriptorKey;
-            publicDescriptor = publicOutputDescriptor.toString();
-        }
-
-        const privateOutputDescriptorKey = new OutputDescriptorKey();
-        privateOutputDescriptorKey.fingerprint = hdRoot.fingerprint.toString('hex');
-        privateOutputDescriptorKey.derivation = `/${purpose}'/${coinType}'/${account}'`;
-        if (purpose == 48) {
-            privateOutputDescriptorKey.derivation = `${privateOutputDescriptorKey.derivation}/${script}'`;
-        }
-        privateOutputDescriptorKey.value = finalNode.toBase58();
-        if (purpose == 48) {
-            privateDescriptorKey = privateOutputDescriptorKey.toString();
-        } else {
-            const privateOutputDescriptor = new OutputDescriptor();
-            privateOutputDescriptor.script = OutputDescriptor.scriptFromPurpose(purpose);
-            privateOutputDescriptor.key = privateOutputDescriptorKey;
-            privateDescriptor = privateOutputDescriptor.toString();
-        }
-
-        if (purpose !== 48) {
-            derivedArray = Derivator.deriveList(purpose, finalNode.derive(change), startIndex, endIndex, network);
-        }
-
-        return { publicDescriptor, privateDescriptor, publicDescriptorKey, privateDescriptorKey, derivedArray };
-    }
 
     static deriveOne(purpose: number, finalNode: BIP32Interface, index: number, network: bitcoinjs.Network) {
         const paymentGenerator = this.paymentGenerator(purpose);

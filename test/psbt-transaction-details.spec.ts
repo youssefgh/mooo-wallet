@@ -1,4 +1,5 @@
 import * as bitcoinjs from 'bitcoinjs-lib';
+import * as ecc from 'tiny-secp256k1';
 import { Mnemonic } from '../src/app/core/bitcoinjs/mnemonic';
 import { PsbtTransactionDetails } from '../src/app/core/psbt-transaction-details';
 
@@ -29,6 +30,7 @@ describe('PsbtTransactionDetails', () => {
   });
 
   it(`fromSigned should return correct`, () => {
+    bitcoinjs.initEccLib(ecc);
     const network = bitcoinjs.networks.regtest;
     const mnemonic = new Mnemonic();
     mnemonic.phrase = 'wool bullet crunch trend acoustic text swap flash video news bless second';

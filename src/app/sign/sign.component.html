@@ -2,19 +2,19 @@
 
 <main>
     <div class="container">
-        <div class="row valign-wrapper">
-            <div class="input-field col s9 m10 l11 xl11">
+        <div class="row">
+            <div class="input-field col s10 m10 l11 xl11">
                 <textarea id="source" class="materialize-textarea" [(ngModel)]="psbtString"></textarea>
                 <label for="source">Psbt</label>
             </div>
-            <div class="col s3 m2 l1 xl1" style="margin-top: 1rem">
+            <div class="col s2 m2 l1 xl1 file-field input-field">
                 <app-qr-code-reader (created)="onQrReaderCreated($event)"
                     (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
         <div *ngIf="!psbt" class="row center-align">
             <a class="waves-effect waves-light btn-large" (click)="load()">
-                <i class="material-icons left">system_update_alt</i>
+                <i class="material-symbols-outlined left">system_update_alt</i>
                 Load
             </a>
         </div>

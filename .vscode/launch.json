@@ -12,7 +12,7 @@
             "args": [
                 "--project",
                 "${workspaceFolder}/test/config/tsconfig.json",
-                "${workspaceFolder}//node_modules/jasmine/bin/jasmine.js",
+                "${workspaceFolder}/node_modules/jasmine/bin/jasmine.js",
                 "--config=${workspaceFolder}/test/config/jasmine.json",
             ],
             "console": "integratedTerminal",

@@ -2,8 +2,8 @@
 
 <main>
     <div class="container">
-        <div class="row valign-wrapper">
-            <div *ngIf="!utxosAvailable()" class="input-field col s9 m10 l11 xl11">
+        <div class="row">
+            <div *ngIf="!utxosAvailable()" class="input-field col s10 m10 l11 xl11">
                 <textarea id="descriptor" class="materialize-textarea" [(ngModel)]="descriptor"
                     [disabled]="utxosAvailable()"></textarea>
                 <label for="descriptor">Descriptor</label>
@@ -13,14 +13,14 @@
                     [disabled]="utxosAvailable()"></textarea>
                 <label for="descriptor">Descriptor</label>
             </div>
-            <div *ngIf="!utxosAvailable()" class="col s3 m2 l1 xl1" style="margin-top: 1rem">
+            <div *ngIf="!utxosAvailable()" class="col s2 m2 l1 xl1 file-field input-field">
                 <app-qr-code-reader (created)="onSourceQrReaderCreated($event)"
                     (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
             </div>
         </div>
         <div *ngIf="!utxosAvailable()" class="row center-align">
             <a class="waves-effect waves-light btn-large" (click)="loadUTXO()">
-                <i class="material-icons left">system_update_alt</i>
+                <i class="material-symbols-outlined left">system_update_alt</i>
                 Load
             </a>
         </div>
@@ -44,7 +44,7 @@
                         <td>{{utxo.derived.address}}</td>
                         <td>
                             <a class="waves-effect waves-light btn-floating secondary-content" (click)="removeUTXO(i)">
-                                <i class="material-icons">remove</i>
+                                <i class="material-symbols-outlined">remove</i>
                             </a>
                         </td>
                     </tr>
@@ -90,7 +90,7 @@
             </div>
             <div class="col s12 l1 center-align" style="margin-top: 1rem">
                 <a class="waves-effect waves-light btn-floating" (click)="addDestination()">
-                    <i class="material-icons">add</i>
+                    <i class="material-symbols-outlined">add</i>
                 </a>
             </div>
         </div>
@@ -109,7 +109,7 @@
                         <td>
                             <a class="waves-effect waves-light btn-floating secondary-content"
                                 (click)="removeDestination(i)">
-                                <i class="material-icons">remove</i>
+                                <i class="material-symbols-outlined">remove</i>
                             </a>
                         </td>
                     </tr>

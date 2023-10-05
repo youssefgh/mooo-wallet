@@ -81,7 +81,6 @@ export class Psbt {
                     const path = bip32Derivation.path;
                     let signerNode = hdRoot.derivePath(path);
                     let signer: bitcoinjs.Signer;
-                    let leafHash: Buffer;
                     if ((bip32Derivation as TapBip32Derivation).leafHashes) {
                         const childNodeXOnlyPubkey = toXOnly(signerNode.publicKey);
                         if (input.tapBip32Derivation?.length === 1) {
@@ -102,20 +101,15 @@ export class Psbt {
                             isTrMutisig = undefined;
                         } else {
                             signer = signerNode;
-                            leafHash = tapleafHash({
+                            inputLeafHash = tapleafHash({
                                 output: input.tapLeafScript[0].script,
                                 version: input.tapLeafScript[0].leafVersion,
                             });
-                            inputLeafHash = leafHash;
                         }
                     } else {
                         signer = signerNode;
                     }
-                    if (isTrMutisig) {
-                        this.object.signTaprootInput(i, signer, leafHash);
-                    } else {
-                        this.object.signInput(i, signer);
-                    }
+                    this.object.signInput(i, signer);
                     signedCount++;
                     if (!threshold || this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, threshold, publicKeyCount, input)) {
                         this.object.finalizeInput(i);
