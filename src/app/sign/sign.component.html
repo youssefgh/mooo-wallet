@@ -8,8 +8,8 @@
                 <label for="source">Psbt</label>
             </div>
             <div class="col s2 m2 l1 xl1 file-field input-field">
-                <app-qr-code-reader (created)="onQrReaderCreated($event)"
-                    (scanned)="onSourceQrScan($event)"></app-qr-code-reader>
+                <app-qr-code-reader (created)="onQrReaderCreated($event)" (scanned)="onSourceQrScan($event)"
+                    (error)="onSourceQrScanError($event)"></app-qr-code-reader>
             </div>
         </div>
         <div *ngIf="!psbt" class="row center-align">
@@ -52,26 +52,36 @@
                 <a class="waves-effect waves-light btn" (click)="sign()">Sign</a>
             </div>
         </div>
+        <div *ngIf="signResult?.signedTransaction" class="row center-align">
+            <h5>Signed transaction :</h5>
+        </div>
         <div *ngIf="signResult?.signedTransaction" class="row valign-wrapper">
             <div class="col s9 m10 l11 xl11">
-                <label>Transaction</label>
+                <label></label>
                 <div style="word-wrap: break-word">
                     {{signResult.signedTransaction}}
                 </div>
             </div>
             <div class="col s3 m2 l1 xl1">
-                <a class="waves-effect waves-light btn" (click)="showQr(signResult.signedTransaction)">QR</a>
+                <a class="waves-effect waves-light btn" (click)="showQr(signResult)">QR</a>
             </div>
+        </div>
+        <div *ngIf="signResult?.psbtBase64" class="row center-align">
+            <h5 *ngIf="signResult.threshold && signResult.signatureCount < signResult.threshold">
+                Psbt ({{signResult.signatureCount}} of {{signResult.threshold}} signed) :
+            </h5>
+            <h5 *ngIf="!signResult.threshold">
+                Psbt ({{signResult.signatureCount}} of ? signed) :
+            </h5>
         </div>
         <div *ngIf="signResult?.psbtBase64" class="row valign-wrapper">
             <div class="col s9 m10 l11 xl11">
-                <label>Psbt</label>
                 <div style="word-wrap: break-word">
                     {{signResult.psbtBase64}}
                 </div>
             </div>
             <div class="col s3 m2 l1 xl1">
-                <a class="waves-effect waves-light btn" (click)="showQr(signResult.psbtBase64)">QR</a>
+                <a class="waves-effect waves-light btn" (click)="showQr(signResult)">QR</a>
             </div>
         </div>
         <div *ngIf="signResult?.signedTransaction" class="row">
@@ -85,10 +95,13 @@
             </div>
         </div>
     </div>
+    <div *ngIf="urDecoder.expectedPartCount() > 0" class="progress" style="bottom: 0; position: fixed;">
+        <div class="determinate" [style.width.%]="urDecoder.getProgress()*100"></div>
+    </div>
 </main>
 <div class="modal" style="width: 30vw; min-width: 300px" #qrModal>
-    <div class="modal-content center-align">
-        <app-qr-code [value]="selectedQr"></app-qr-code>
+    <div class="modal-content center-align" style="padding: 1vw;">
+        <app-qr-code [value]="selectedQrList"></app-qr-code>
     </div>
     <div class="modal-footer" style="text-align: center">
         <a class="modal-close waves-effect waves-green btn-flat">Close</a>

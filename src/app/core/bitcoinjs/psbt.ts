@@ -32,18 +32,21 @@ export class Psbt {
         let psbtBase64: string;
         const hdRoot = HdRoot.from(mnemonic, this.network);
         const signResult = this.signIndependently(hdRoot);
-        if (signResult.finalizedInputsCount === this.object.txInputs.length) {
-            signedTransaction = this.object.extractTransaction().toHex();
-
-        } else {
-            psbtBase64 = this.object.toBase64();
+        if (signResult.signedInputCount > 0) {
+            if (signResult.finalizedInputCount === this.object.txInputs.length) {
+                signedTransaction = this.object.extractTransaction().toHex();
+            } else {
+                psbtBase64 = this.object.toBase64();
+            }
         }
-        return { signedTransaction, psbtBase64, signedCount: signResult.signedCount };
+        return { signedTransaction, psbtBase64, signatureCount: signResult.signatureCount, threshold: signResult.threshold };
     }
 
     signIndependently(hdRoot: BIP32Interface) {
-        let signedCount = 0;
-        let finalizedInputsCount = 0;
+        let signedInputCount = 0;
+        let finalizedInputCount = 0;
+        let globalThreshold: number;
+        let globalSignatureCount: number;
         for (let i = 0; i < this.object.txInputs.length; i++) {
             const input = this.object.data.inputs[i];
             let bip32DerivationList = this.bip32Derivation(input);
@@ -74,7 +77,7 @@ export class Psbt {
             for (const bip32Derivation of bip32DerivationList) {
                 if (this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, threshold, publicKeyCount, input)) {
                     this.object.finalizeInput(i);
-                    finalizedInputsCount++;
+                    finalizedInputCount++;
                     break;
                 }
                 if (hdRoot.fingerprint.equals(bip32Derivation.masterFingerprint)) {
@@ -110,10 +113,10 @@ export class Psbt {
                         signer = signerNode;
                     }
                     this.object.signInput(i, signer);
-                    signedCount++;
+                    signedInputCount++;
                     if (!threshold || this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, threshold, publicKeyCount, input)) {
                         this.object.finalizeInput(i);
-                        finalizedInputsCount++;
+                        finalizedInputCount++;
                         break;
                     }
                 }
@@ -136,10 +139,21 @@ export class Psbt {
                     }
                 }
                 this.object.finalizeInput(i);
-                finalizedInputsCount++;
+                finalizedInputCount++;
+            }
+            if (globalThreshold !== null && threshold) {
+                globalThreshold = threshold;
+                if (isTrMutisig) {
+                    globalSignatureCount = input.tapScriptSig?.length;
+                } else if (isWshMutisig) {
+                    globalSignatureCount = input.partialSig?.length;
+                }
+            } else {
+                globalThreshold = null;
+                globalSignatureCount = null;
             }
         }
-        return { signedCount, finalizedInputsCount };
+        return { threshold: globalThreshold, signatureCount: globalSignatureCount, signedInputCount, finalizedInputCount };
     }
 
     isMultisigSignatureComplete(isTrMutisig: boolean, isWshMutisig: boolean, threshold: number, publicKeyCount: number, input: PsbtInput) {
@@ -164,5 +178,6 @@ export class Psbt {
 export interface SignResult {
     signedTransaction: string;
     psbtBase64: string;
-    signedCount: number;
+    threshold: number;
+    signatureCount: number;
 }

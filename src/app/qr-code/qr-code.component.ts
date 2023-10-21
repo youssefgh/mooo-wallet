@@ -1,5 +1,6 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import * as qrcode from 'qrcode';
+import { Component, Input } from '@angular/core';
+import { BrowserQRCodeSvgWriter } from '@zxing/browser';
+import { Subscription, interval } from 'rxjs';
 
 @Component({
     selector: 'app-qr-code',
@@ -8,15 +9,40 @@ import * as qrcode from 'qrcode';
 })
 export class QrCodeComponent {
 
-    @ViewChild('qr', { static: true }) qrCanvas: ElementRef;
+    currentImage: string;
+    imageList: string[];
+    writer = new BrowserQRCodeSvgWriter();
+
+    intervall = interval(500);
+    subscription: Subscription;
+    currentImageIndex: number;
 
     @Input()
-    set value(value: string) {
-        if (value) {
-            qrcode.toCanvas(this.qrCanvas.nativeElement, value, { errorCorrectionLevel: 'high' });
-            this.qrCanvas.nativeElement.style.width = this.qrCanvas.nativeElement.parentNode.style.width;
-            this.qrCanvas.nativeElement.style.height = this.qrCanvas.nativeElement.parentNode.style.height;
+    set value(list: string[]) {
+        this.currentImage = null;
+        this.currentImageIndex = 0;
+        this.subscription?.unsubscribe();
+        if (!list || list.length === 0) {
+            return;
         }
+        this.imageList = list.map(qrItem => this.svgFrom(qrItem));
+        if (this.imageList.length === 1) {
+            this.currentImage = this.imageList[0];
+        } else {
+            this.subscription = this.intervall.subscribe(() => {
+                if (this.currentImageIndex >= this.imageList.length) {
+                    this.currentImageIndex = 0;
+                }
+                this.currentImage = this.imageList[this.currentImageIndex];
+                this.currentImageIndex++;
+            });
+        }
+    }
+
+    svgFrom(qrItem: string) {
+        const svg = this.writer.write(qrItem, 400, 400);
+        const svgAsXML = (new XMLSerializer).serializeToString(svg);
+        return 'data:image/svg+xml,' + encodeURIComponent(svgAsXML);
     }
 
 }

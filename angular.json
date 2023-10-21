@@ -21,7 +21,6 @@
               "bitcoinjs-lib",
               "buffer",
               "coinselect/split",
-              "qrcode",
               "materialize-css"
             ],
             "outputPath": "dist",

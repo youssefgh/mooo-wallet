@@ -7,6 +7,7 @@ import { Mnemonic } from '../core/bitcoinjs/mnemonic';
 import { Psbt, SignResult } from '../core/bitcoinjs/psbt';
 import { PsbtTransactionDetails } from '../core/psbt-transaction-details';
 import { UrDecoderUtils } from '../core/ur-decoder-utils';
+import { UrEncoderUtils } from '../core/ur-encoder-utils';
 import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 
 declare const M: any;
@@ -30,7 +31,7 @@ export class SignComponent implements OnInit, AfterContentChecked {
 
     mnemonic = new Mnemonic;
 
-    selectedQr: string;
+    selectedQrList: string[];
     qrModal;
 
     @ViewChild('qrModal', { static: true })
@@ -69,6 +70,7 @@ export class SignComponent implements OnInit, AfterContentChecked {
             const ur = UrDecoderUtils.decode(text, this.urDecoder);
             if (ur.error) {
                 M.toast({ html: `${ur.error} !`, classes: 'red' });
+                console.error(ur.error);
                 return;
             }
             if (ur.message) {
@@ -80,6 +82,10 @@ export class SignComponent implements OnInit, AfterContentChecked {
             this.psbtString = text;
             this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
         }
+    }
+
+    onSourceQrScanError(error: string) {
+        M.toast({ html: `${error} !`, classes: 'red' });
     }
 
     load() {
@@ -109,8 +115,23 @@ export class SignComponent implements OnInit, AfterContentChecked {
         this.signResult = signResult;
     }
 
-    showQr(qr: string) {
-        this.selectedQr = qr;
+    showQr(signResult: SignResult) {
+        let qr: string;
+        if (signResult.signedTransaction) {
+            qr = signResult.signedTransaction;
+        } else if (signResult.psbtBase64) {
+            qr = signResult.psbtBase64;
+        }
+        if (qr) {
+            if (qr.length < 1000) {
+                this.selectedQrList = [qr];
+            } else if (signResult.signedTransaction) {
+                this.selectedQrList = UrEncoderUtils.encodeBytes(qr);
+            } else if (signResult.psbtBase64) {
+                this.selectedQrList = UrEncoderUtils.encodePsbt(qr);
+            }
+        }
+
         this.qrModal.open();
     }
 

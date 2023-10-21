@@ -13,6 +13,7 @@ import { Psbt } from '../core/bitcoinjs/psbt';
 import { PsbtFactory } from '../core/bitcoinjs/psbt-factory';
 import { Utxo } from '../core/bitcoinjs/utxo';
 import { OutputDescriptor } from '../core/output-descriptor';
+import { UrEncoderUtils } from '../core/ur-encoder-utils';
 import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 import { LocalStorageService } from '../shared/local-storage.service';
 import { CreateTransactionService } from './create-transaction.service';
@@ -48,7 +49,7 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
 
     environment = environment;
 
-    selectedQr: string;
+    selectedQrList: string[];
     qrModal;
 
     @ViewChild('qrModal', { static: true })
@@ -296,8 +297,12 @@ export class CreateTransactionComponent implements OnInit, AfterContentChecked {
         this.base64 = this.psbt.object.toBase64();
     }
 
-    showQr(qr: string) {
-        this.selectedQr = qr;
+    showQr(base64: string) {
+        if (base64.length < 1000) {
+            this.selectedQrList = [base64];
+        } else {
+            this.selectedQrList = UrEncoderUtils.encodePsbt(base64);
+        }
         this.qrModal.open();
     }
 

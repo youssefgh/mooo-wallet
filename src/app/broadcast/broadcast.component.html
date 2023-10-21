@@ -24,4 +24,7 @@
             </div>
         </div>
     </div>
+    <div *ngIf="urDecoder.expectedPartCount() > 0" class="progress" style="bottom: 0; position: fixed;">
+        <div class="determinate" [style.width.%]="urDecoder.getProgress()*100"></div>
+    </div>
 </main>

@@ -2,7 +2,7 @@
     <i class="material-symbols-outlined">qr_code</i>
 </div>
 <div class="hide">
-    <input type="file" accept="image/*" capture="camera" (change)="onPictureChange($event)" #fileInput />
+    <input multiple type="file" accept="image/*" capture="camera" (change)="onPictureChange($event)" #fileInput />
     <div class="file-path-wrapper hide">
         <input class="file-path validate" type="text" required>
     </div>

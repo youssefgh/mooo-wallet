@@ -36,7 +36,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
 
     derivedArray: Array<Derived>;
 
-    selectedQr: string;
+    selectedQrList: string[];
     qrModal;
 
     @ViewChild('qrModal', { static: true })
@@ -80,7 +80,7 @@ export class MnemonicDerivationComponent implements OnInit, AfterContentChecked 
     }
 
     showQr(qr: string) {
-        this.selectedQr = qr;
+        this.selectedQrList = [qr];
         this.qrModal.open();
     }
 

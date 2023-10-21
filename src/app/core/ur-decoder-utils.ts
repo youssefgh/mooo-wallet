@@ -16,8 +16,10 @@ export class UrDecoderUtils {
         const decoded = ur.decodeCBOR();
         if (ur.type === 'crypto-psbt') {
           message = decoded.toString('base64');
+        } else if (ur.type === 'bytes') {
+          message = decoded.toString("hex");
         } else {
-          error = 'Incompatible type';
+          error = `Incompatible type : ${ur.type}`;
         }
       }
       else {

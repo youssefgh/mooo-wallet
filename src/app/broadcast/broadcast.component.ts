@@ -1,8 +1,10 @@
 import { Location } from '@angular/common';
 import { AfterContentChecked, Component, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
+import { URDecoder } from '@ngraveio/bc-ur';
 import { environment } from '../../environments/environment';
 import { JsonRpcResponse } from '../core/electrum/json-rpc-response';
+import { UrDecoderUtils } from '../core/ur-decoder-utils';
 import { QrCodeReaderComponent } from '../qr-code-reader/qr-code-reader.component';
 import { BroadcastService } from './broadcast.service';
 
@@ -17,6 +19,7 @@ declare const M: any;
 export class BroadcastComponent implements AfterContentChecked {
 
     qrCodeReaderComponent: QrCodeReaderComponent;
+    urDecoder = new URDecoder();
     signedTransaction: string;
 
     constructor(
@@ -45,8 +48,22 @@ export class BroadcastComponent implements AfterContentChecked {
     }
 
     onSourceQrScan(text: string) {
-        this.signedTransaction = text;
-        this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
+        if (UrDecoderUtils.isUr(text)) {
+            const ur = UrDecoderUtils.decode(text, this.urDecoder);
+            if (ur.error) {
+                M.toast({ html: `${ur.error} !`, classes: 'red' });
+                console.error(ur.error);
+                return;
+            }
+            if (ur.message) {
+                this.signedTransaction = ur.message;
+                this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
+                this.urDecoder = new URDecoder();
+            }
+        } else {
+            this.signedTransaction = text;
+            this.qrCodeReaderComponent.stopDecodeFromVideoDevice();
+        }
     }
 
     async broadcast() {
@@ -67,6 +84,7 @@ export class BroadcastComponent implements AfterContentChecked {
     }
 
     clear() {
+        this.urDecoder = new URDecoder();
         this.signedTransaction = null;
         this.location.replaceState('./Sign');
     }

@@ -25,7 +25,7 @@ export class DescriptorDerivationComponent implements OnInit, AfterContentChecke
     defaultTo = 10;
     toIndex = this.defaultTo;
 
-    selectedQr: string;
+    selectedQrList: string[];
     qrModal;
 
     @ViewChild('qrModal', { static: true })
@@ -89,7 +89,7 @@ export class DescriptorDerivationComponent implements OnInit, AfterContentChecke
     }
 
     showQr(qr: string) {
-        this.selectedQr = qr;
+        this.selectedQrList = [qr];
         this.qrModal.open();
     }
 

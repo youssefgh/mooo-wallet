@@ -60,17 +60,17 @@ export class QrCodeReaderComponent implements OnInit {
         this.fileInputRef.nativeElement.click();
     }
 
-    onPictureChange(event) {
+    async onPictureChange(event) {
         const fileList: FileList = event.target.files;
-        if (fileList && fileList.length > 0) {
-            const file = fileList[0];
+        for (const file of fileList) {
             const imgSrc = URL.createObjectURL(file);
-            this.codeReader.decodeFromImageUrl(imgSrc).then(result => {
+            try {
+                const result = await this.codeReader.decodeFromImageUrl(imgSrc);
                 this.scanned.emit(result.getText());
-            }).catch(err => {
-                console.error(err);
-                this.error.emit(err);
-            });
+            } catch (error) {
+                console.error(error);
+                this.error.emit(error);
+            }
         }
     }
 

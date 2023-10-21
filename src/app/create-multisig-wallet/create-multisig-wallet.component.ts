@@ -23,7 +23,7 @@ export class CreateMultisigWalletComponent implements OnInit, AfterContentChecke
 
     descriptor: string;
 
-    selectedQr: string;
+    selectedQrList: string[];
     qrModal;
 
     @ViewChild('qrModal', { static: true })
@@ -73,7 +73,7 @@ export class CreateMultisigWalletComponent implements OnInit, AfterContentChecke
     }
 
     showQr(qr: string) {
-        this.selectedQr = qr;
+        this.selectedQrList = [qr];
         this.qrModal.open();
     }
 
