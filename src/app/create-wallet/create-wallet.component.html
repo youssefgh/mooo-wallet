@@ -14,7 +14,7 @@
                 </label>
             </div>
             <div *ngIf="!wallet" class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="mnemonic.passphrase">
+                <input id="passphrase" autocomplete="off" [(ngModel)]="mnemonic.passphrase">
                 <label for="passphrase">Passphrase (optional)</label>
             </div>
         </div>

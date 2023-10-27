@@ -10,7 +10,7 @@
         </div>
         <div class="row center-align">
             <div class="col s12 input-field">
-                <input id="passphrase" type="text" [(ngModel)]="mnemonic.passphrase">
+                <input id="passphrase" autocomplete="off" [(ngModel)]="mnemonic.passphrase">
                 <label for="passphrase">Passphrase (optional)</label>
             </div>
         </div>
@@ -83,7 +83,8 @@
         </div>
         <div *ngIf="publicDescriptorKey" class="row center-align">
             <div class="col s12 input-field">
-                <textarea id="publicDescriptorKey" class="materialize-textarea" [(ngModel)]="publicDescriptorKey"></textarea>
+                <textarea id="publicDescriptorKey" class="materialize-textarea"
+                    [(ngModel)]="publicDescriptorKey"></textarea>
                 <label for="publicDescriptorKey">Public descriptor key (Account {{account}})</label>
             </div>
         </div>
@@ -117,7 +118,7 @@
 <div class="modal" style="width: 30vw; min-width: 280px" #qrModal>
     <div class="modal-content center-align" style="padding: 1vw;">
         <app-qr-code [value]="selectedQrList" style="width: 180px"></app-qr-code>
-        <p style="font-size: smaller">{{selectedQrList[0]}}</p>
+        <p *ngIf="selectedQrList" style="font-size: smaller">{{selectedQrList[0]}}</p>
     </div>
     <div class="modal-footer" style="text-align: center">
         <a class="modal-close waves-effect waves-green btn-flat">Close</a>
