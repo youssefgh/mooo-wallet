@@ -19,8 +19,8 @@
               "bip32",
               "bip39",
               "bitcoinjs-lib",
+              "bitcoinselect/split",
               "buffer",
-              "coinselect/split",
               "materialize-css"
             ],
             "outputPath": "dist",

@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AfterContentChecked, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { Big } from 'big.js';
-import * as coinSelect from 'coinselect/split';
+import * as coinSelect from 'bitcoinselect/split';
 import { environment } from '../../environments/environment';
 import { ConversionService } from '../conversion.service';
 import { Bip21DecoderUtils } from '../core/bip21-decoder-utils';
