@@ -74,7 +74,7 @@
 <div class="modal" style="width: 30vw; min-width: 280px" #qrModal>
     <div class="modal-content center-align" style="padding: 1vw;">
         <app-qr-code [value]="selectedQrList" style="width: 180px"></app-qr-code>
-        <p style="font-size: smaller">{{selectedQrList[0]}}</p>
+        <p *ngIf="selectedQrList" style="font-size: smaller">{{selectedQrList[0]}}</p>
     </div>
     <div class="modal-footer" style="text-align: center">
         <a class="modal-close waves-effect waves-green btn-flat">Close</a>
