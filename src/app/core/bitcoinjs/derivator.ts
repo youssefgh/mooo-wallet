@@ -67,7 +67,7 @@ export class Derivator {
 
     static deriveBIPList(changeNode: BIP32Interface, startIndex: number, endIndex: number,
         paymentGenerator: Function, network: bitcoinjs.Network) {
-        const derivedList = new Array<Derived>;
+        const derivedList = new Array<Derived>();
         for (let i = startIndex; i < endIndex; i++) {
             const derived = this.deriveBIP(changeNode.derive(i), i, paymentGenerator, network);
             derivedList.push(derived);

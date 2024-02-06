@@ -130,7 +130,7 @@ export class OutputDescriptor {
     }
 
     deriveWshMultisigList(change: number, startIndex: number, endIndex: number, network: bitcoinjs.Network) {
-        const derivedList = new Array<Derived>;
+        const derivedList = new Array<Derived>();
         for (let i = startIndex; i < endIndex; i++) {
             const publicKeyListSorted = this.sortedmultiParamList.map(outputDescriptorKey => outputDescriptorKey.publicKey(change, i, network)).sort((x1, x2) => x1.compare(x2));
             const payment = Derivator.bip48Payment(this.threshold, publicKeyListSorted, network);
@@ -146,7 +146,7 @@ export class OutputDescriptor {
     }
 
     deriveTaprootMultisigList(change: number, startIndex: number, endIndex: number, network: bitcoinjs.Network) {
-        const derivedList = new Array<Derived>;
+        const derivedList = new Array<Derived>();
         for (let i = startIndex; i < endIndex; i++) {
             const taprootMultisigDetails = this.taprootMultisigDetails(change, i, network);
             const payment = bitcoinjs.payments.p2tr({

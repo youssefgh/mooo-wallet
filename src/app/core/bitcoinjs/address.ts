@@ -14,7 +14,7 @@ export class Address {
         }
     }
 
-    static fromOutputScript(outputScript, network: Network) {
+    static fromOutputScript(outputScript: Buffer, network: Network) {
         return bitcoinjs.address.fromOutputScript(outputScript, network.value);
     }
 
