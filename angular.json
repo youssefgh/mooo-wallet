@@ -97,21 +97,21 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "wallet-web-client:build"
+            "buildTarget": "wallet-web-client:build"
           },
           "configurations": {
             "test": {
-              "browserTarget": "wallet-web-client:build:test"
+              "buildTarget": "wallet-web-client:build:test"
             },
             "production": {
-              "browserTarget": "wallet-web-client:build:production"
+              "buildTarget": "wallet-web-client:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "wallet-web-client:build"
+            "buildTarget": "wallet-web-client:build"
           }
         },
         "test": {
