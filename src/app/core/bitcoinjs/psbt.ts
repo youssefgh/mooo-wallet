@@ -31,39 +31,59 @@ export class Psbt {
         let signedTransaction: string;
         let psbtBase64: string;
         const hdRoot = HdRoot.from(mnemonic, this.network);
-        const signResult = this.signIndependently(hdRoot);
-        if (signResult.signedInputCount > 0) {
-            if (signResult.finalizedInputCount === this.object.txInputs.length) {
-                signedTransaction = this.object.extractTransaction().toHex();
-            } else {
+        const inputSignResultList = this.signIndependently(hdRoot);
+        let finalized = true;
+        for (const inputSignResult of inputSignResultList) {
+            if (!inputSignResult.alreadySigned && !inputSignResult.finalized) {
+                finalized = false;
+                break;
+            }
+        }
+        if (finalized) {
+            signedTransaction = this.object.extractTransaction().toHex();
+        } else {
+            let signed = false;
+            for (const inputSignResult of inputSignResultList) {
+                if (inputSignResult.signedCount > 0) {
+                    signed = true;
+                    break;
+                }
+            }
+            if (signed) {
                 psbtBase64 = this.object.toBase64();
             }
         }
-        return { signedTransaction, psbtBase64, signatureCount: signResult.signatureCount, threshold: signResult.threshold };
+        return { signedTransaction, psbtBase64, inputSignResultList };
     }
 
     signIndependently(hdRoot: BIP32Interface) {
-        let signedInputCount = 0;
-        let finalizedInputCount = 0;
-        let globalThreshold: number;
-        let globalSignatureCount: number;
+        const inputSignResultList = new Array<InputSignResult>();
         for (let i = 0; i < this.object.txInputs.length; i++) {
             const input = this.object.data.inputs[i];
+            const inputSignResult = new InputSignResult();
+            inputSignResult.hash = this.object.txInputs[i].hash.toString('hex');
+            inputSignResult.index = this.object.txInputs[i].index;
+            inputSignResultList.push(inputSignResult);
             let bip32DerivationList = this.bip32Derivation(input);
+            if (!bip32DerivationList) {
+                inputSignResult.alreadySigned = true;
+                continue;
+            }
             let isWshMutisig = false;
             let isTrMutisig = false;
-            let threshold: number;
             let publicKeyCount: number;
             let inputLeafHash: Buffer;
             if (input.bip32Derivation?.length > 1) {
                 const p2ms = bitcoinjs.payments.p2ms({ output: input.witnessScript });
-                threshold = p2ms.m;
+                inputSignResult.threshold = p2ms.m;
                 isWshMutisig = true;
             } else if (input.tapBip32Derivation?.length > 1) {
                 const chunks = bitcoinjs.script.decompile(input.tapLeafScript[0].script);
-                threshold = chunks[chunks.length - 2] as number - bitcoinjs.script.OPS.OP_RESERVED;
+                inputSignResult.threshold = chunks[chunks.length - 2] as number - bitcoinjs.script.OPS.OP_RESERVED;
                 publicKeyCount = bip32DerivationList.length - 1;
                 isTrMutisig = true;
+            } else {
+                inputSignResult.threshold = 1;
             }
             if (isTrMutisig) {
                 bip32DerivationList = bip32DerivationList.slice().sort((d1, d2) => {
@@ -74,10 +94,23 @@ export class Psbt {
                 }
                 );
             }
+            if (isTrMutisig) {
+                if (input.tapScriptSig) {
+                    inputSignResult.signatureCount = input.tapScriptSig.length;
+                } else {
+                    inputSignResult.signatureCount = 0;
+                }
+            } else if (isWshMutisig) {
+                if (input.partialSig) {
+                    inputSignResult.signatureCount = input.partialSig.length;
+                } else {
+                    inputSignResult.signatureCount = 0;
+                }
+            }
             for (const bip32Derivation of bip32DerivationList) {
-                if (this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, threshold, publicKeyCount, input)) {
+                if (this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, inputSignResult.threshold, publicKeyCount, input)) {
                     this.object.finalizeInput(i);
-                    finalizedInputCount++;
+                    inputSignResult.finalized = true;
                     break;
                 }
                 if (hdRoot.fingerprint.equals(bip32Derivation.masterFingerprint)) {
@@ -100,7 +133,7 @@ export class Psbt {
                             signer = signerNode.tweak(
                                 bitcoinjs.crypto.taggedHash('TapTweak', Buffer.concat([childNodeXOnlyPubkey, rootHash]))
                             );
-                            threshold = undefined;
+                            inputSignResult.threshold = 1;
                             isTrMutisig = undefined;
                         } else {
                             signer = signerNode;
@@ -113,15 +146,16 @@ export class Psbt {
                         signer = signerNode;
                     }
                     this.object.signInput(i, signer);
-                    signedInputCount++;
-                    if (!threshold || this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, threshold, publicKeyCount, input)) {
+                    inputSignResult.signedCount++;
+                    inputSignResult.signatureCount++;
+                    if (inputSignResult.threshold === 1 || this.isMultisigSignatureComplete(isTrMutisig, isWshMutisig, inputSignResult.threshold, publicKeyCount, input)) {
                         this.object.finalizeInput(i);
-                        finalizedInputCount++;
+                        inputSignResult.finalized = true;
                         break;
                     }
                 }
             }
-            if (isTrMutisig && input.tapScriptSig?.length === threshold && input.tapScriptSig?.length !== publicKeyCount) {
+            if (isTrMutisig && input.tapScriptSig?.length === inputSignResult.threshold && input.tapScriptSig?.length !== publicKeyCount) {
                 for (const bip32Derivation of bip32DerivationList.slice(1)) {
                     let tapScriptSigContainsSig = false;
                     for (const tapScriptSig of input.tapScriptSig) {
@@ -139,21 +173,10 @@ export class Psbt {
                     }
                 }
                 this.object.finalizeInput(i);
-                finalizedInputCount++;
-            }
-            if (globalThreshold !== null && threshold) {
-                globalThreshold = threshold;
-                if (isTrMutisig) {
-                    globalSignatureCount = input.tapScriptSig?.length;
-                } else if (isWshMutisig) {
-                    globalSignatureCount = input.partialSig?.length;
-                }
-            } else {
-                globalThreshold = null;
-                globalSignatureCount = null;
+                inputSignResult.finalized = true;
             }
         }
-        return { threshold: globalThreshold, signatureCount: globalSignatureCount, signedInputCount, finalizedInputCount };
+        return inputSignResultList;
     }
 
     isMultisigSignatureComplete(isTrMutisig: boolean, isWshMutisig: boolean, threshold: number, publicKeyCount: number, input: PsbtInput) {
@@ -178,6 +201,15 @@ export class Psbt {
 export interface SignResult {
     signedTransaction: string;
     psbtBase64: string;
+    inputSignResultList: InputSignResult[];
+}
+
+export class InputSignResult {
+    hash: string;
+    index: number;
+    alreadySigned: boolean;
     threshold: number;
+    signedCount = 0;
     signatureCount: number;
+    finalized: boolean;
 }

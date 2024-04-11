@@ -67,12 +67,16 @@
             </div>
         </div>
         <div *ngIf="signResult?.psbtBase64" class="row center-align">
-            <h5 *ngIf="signResult.threshold && signResult.signatureCount < signResult.threshold">
-                Psbt ({{signResult.signatureCount}} of {{signResult.threshold}} signed) :
-            </h5>
-            <h5 *ngIf="!signResult.threshold">
-                Psbt ({{signResult.signatureCount}} of ? signed) :
-            </h5>
+            @for (inputSignResult of signResult.inputSignResultList; track $index) {
+            <h4>
+                Input : {{inputSignResult.hash}}:{{inputSignResult.index}}
+                @if(inputSignResult.alreadySigned || inputSignResult.finalized){
+                <i class="material-symbols-outlined green-text">done</i>
+                } @else {
+                ({{inputSignResult.signedCount}} of {{inputSignResult.threshold}} signed)
+                }
+            </h4>
+            }
         </div>
         <div *ngIf="signResult?.psbtBase64" class="row valign-wrapper">
             <div class="col s9 m10 l11 xl11">
